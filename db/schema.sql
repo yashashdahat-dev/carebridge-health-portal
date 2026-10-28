@@ -151,3 +151,4 @@ ON CONFLICT (name) DO NOTHING;
 -- LEFT JOIN patients p ON d.id = p.department_id
 -- GROUP BY d.id, d.name
 -- ORDER BY patient_count DESC;
+

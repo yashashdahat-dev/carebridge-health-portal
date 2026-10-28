@@ -150,3 +150,4 @@ export function initSequelizeModels(sequelize, DataTypes) {
 }
 
 export default initSequelizeModels;
+

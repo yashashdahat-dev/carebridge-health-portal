@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useCareBridge } from '../context/CareBridgeContext.jsx';
 import styles from './PrescriptionCard.module.css';
 
@@ -28,7 +29,8 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
 
   const displayName = translatedNames[language] || name;
   const displayCategory = translatedCategories[language] || purpose;
-  const displayInstruction = instructions[language] || instructions.en || 'Take as clinically directed by physician.';
+  const displayInstruction =
+    instructions[language] || instructions.en || 'Take as clinically directed by physician.';
 
   const isSpeakingThis = activeSpeechId === id;
 
@@ -49,24 +51,29 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
     >
       <div className={styles.cardHeader}>
         <div>
-          <span className={styles.medCategoryBadge}>
-            {displayCategory}
-          </span>
-          <h3 id={`med-heading-${id}`} className={styles.medName}>
-            {displayName}
+          <h3 id={`med-heading-${id}`} className={styles.medTitle}>
+            <Link to={`/prescriptions/${id}`} style={{ color: 'inherit', textDecoration: 'none' }} title="View medication details">
+              {displayName}
+            </Link>
           </h3>
           <span className={styles.medDosage}>{dosage}</span>
+          {displayCategory && <span className={styles.medCategory}>{displayCategory}</span>}
         </div>
 
-        <div className={styles.takenCheckboxLabel}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+        <div>
+          <label className={styles.adherenceToggleLabel}>
             <input
               type="checkbox"
-              checked={taken}
+              className={styles.adherenceCheckbox}
+              checked={Boolean(taken)}
               onChange={() => onToggleTaken(id)}
               aria-label={`Mark ${name} as ${taken ? 'pending' : 'taken'}`}
             />
-            <span className={`${styles.takenStatusPill} ${taken ? styles.pillTaken : styles.pillPending}`}>
+            <span
+              className={`${styles.takenStatusPill} ${
+                taken ? styles.pillTaken : styles.pillPending
+              }`}
+            >
               {taken ? '✓ Taken' : '○ Pending'}
             </span>
           </label>
@@ -87,7 +94,9 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
       {caution && (
         <div className={styles.cautionBanner} role="note">
           <span aria-hidden="true">⚠️</span>
-          <span><strong>Caution:</strong> {caution}</span>
+          <span>
+            <strong>Caution:</strong> {caution}
+          </span>
         </div>
       )}
 
@@ -95,19 +104,39 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
       <div className={styles.instructionsBlock}>
         <div className={styles.instructionsHeaderRow}>
           <span className={styles.instructionsLabel}>
-            Patient Directions ({language === 'hi' ? 'हिन्दी' : language === 'mr' ? 'मराठी' : 'English'}):
+            Patient Directions ({language === 'hi' ? 'हिंदी' : language === 'mr' ? 'मराठी' : 'English'}):
           </span>
-          <button
-            type="button"
-            className={`${styles.btnSpeechCard} ${isSpeakingThis ? styles.speaking : ''}`}
-            onClick={handleSpeak}
-            aria-label={`Listen to directions for ${name}`}
-          >
-            {isSpeakingThis ? '⏹ Stop' : '🔊 Listen'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link
+              to={`/prescriptions/${id}`}
+              style={{
+                fontSize: '0.75rem',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '4px',
+                background: '#f1f5f9',
+                color: '#334155',
+                textDecoration: 'none',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}
+            >
+              👁️ Details
+            </Link>
+            <button
+              type="button"
+              className={`${styles.btnSpeechCard} ${isSpeakingThis ? styles.speaking : ''}`}
+              onClick={handleSpeak}
+              aria-label={`Listen to directions for ${name}`}
+            >
+              {isSpeakingThis ? '⏹ Stop' : '🔊 Listen'}
+            </button>
+          </div>
         </div>
         <p className={styles.instructionsBodyText}>{displayInstruction}</p>
       </div>
     </article>
   );
 }
+
+export default PrescriptionCard;

@@ -131,6 +131,59 @@ export function CareBridgeProvider({ children }) {
     }
   }, [prescriptions, announce]);
 
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Unified dispatch handler for standard action types (PDF Page 6-7)
+  const dispatch = useCallback((action) => {
+    if (!action || !action.type) return;
+    switch (action.type) {
+      case 'SET_PATIENTS':
+      case PATIENT_ACTIONS.SET_PATIENTS:
+        dispatchPatients({ type: PATIENT_ACTIONS.SET_PATIENTS, payload: action.payload });
+        break;
+      case 'ADD_PATIENT':
+      case PATIENT_ACTIONS.ADD_PATIENT:
+        dispatchPatients({ type: PATIENT_ACTIONS.ADD_PATIENT, payload: action.payload });
+        break;
+      case 'REMOVE_PATIENT':
+      case 'COMPLETE_PATIENT':
+      case PATIENT_ACTIONS.COMPLETE_PATIENT:
+        dispatchPatients({ type: PATIENT_ACTIONS.COMPLETE_PATIENT, payload: action.payload });
+        break;
+      case 'SET_PRESCRIPTIONS':
+      case RX_ACTIONS.SET_PRESCRIPTIONS:
+        dispatchPrescriptions({ type: RX_ACTIONS.SET_PRESCRIPTIONS, payload: action.payload });
+        break;
+      case 'ADD_PRESCRIPTION':
+      case RX_ACTIONS.ADD_PRESCRIPTION:
+        dispatchPrescriptions({ type: RX_ACTIONS.ADD_PRESCRIPTION, payload: action.payload });
+        break;
+      case 'TOGGLE_MEDICATION':
+      case RX_ACTIONS.TOGGLE_TAKEN:
+        dispatchPrescriptions({ type: RX_ACTIONS.TOGGLE_TAKEN, payload: action.payload });
+        break;
+      case 'SET_ERROR':
+        setError(action.payload);
+        if (action.payload) {
+          announce(`Error: ${action.payload}`, 'warning');
+        }
+        break;
+      case 'SET_STATUS':
+        if (action.payload) {
+          announce(action.payload, 'info');
+        }
+        break;
+      case 'LOAD_PREFERENCES':
+        if (action.payload?.theme) setTheme(action.payload.theme);
+        if (action.payload?.language) setLanguage(action.payload.language);
+        if (action.payload?.fontScale) setFontScale(action.payload.fontScale);
+        break;
+      default:
+        console.warn(`[CareBridgeContext] Unhandled dispatch action: ${action.type}`);
+    }
+  }, [announce, setTheme, setLanguage, setFontScale]);
+
   const value = {
     // Accessibility Preferences
     theme,
@@ -144,6 +197,7 @@ export function CareBridgeProvider({ children }) {
 
     // Patient State & Actions (Reducer)
     patientQueue,
+    patients: patientQueue,
     addPatient,
     completePatient,
 
@@ -151,6 +205,25 @@ export function CareBridgeProvider({ children }) {
     prescriptions,
     addPrescription,
     toggleMedicationTaken,
+
+    // Unified dispatch & status state (PDF Section 3.3)
+    dispatch,
+    error,
+    setError,
+    loading,
+    setLoading,
+
+    // State object container
+    state: {
+      patients: patientQueue,
+      prescriptions,
+      theme,
+      language,
+      fontScale,
+      isWideSpacing,
+      error,
+      loading
+    },
 
     // Speech & Announcements
     announcement,

@@ -1,192 +1,58 @@
 /**
- * CareBridge — Main Application Root Component
+ * CareBridge — Main Application Root Component (React Router Routes)
  * File: src/App.jsx
  * 
  * Demonstrates:
- * - Context API (CareBridgeContext for shared global state & reducer actions)
- * - Prop Drilling (Parent-to-child data & callbacks passed to PatientQueue, PatientCard, PrescriptionList)
- * - useMemo for derived state (filtered queue, priority counts, average pain, adherence)
- * - useCallback for optimized event handlers
- * - CSS Modules scoped layout (App.module.css)
+ * - React Router v7 configuration (BrowserRouter, Routes, Route, Outlet) (Task 06)
+ * - Nested layouts (Layout.jsx with persistent header, navigation, live status, and footer)
+ * - Route parameters (/patients/:id, /prescriptions/:id)
+ * - 404 NotFoundPage fallback
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { useCareBridge } from './context/CareBridgeContext.jsx';
-import {
-  calculatePriorityCounts,
-  calculateAveragePainScore,
-  calculateAdherenceStats,
-  areAllMedicationsCompleted,
-  hasUrgentPatients
-} from './utils/clinicalAnalytics.js';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import { StatusBanner } from './components/StatusBanner.jsx';
-import { Header } from './components/Header.jsx';
-import { DashboardSummary } from './components/DashboardSummary.jsx';
-import { PatientTriageForm } from './components/PatientTriageForm.jsx';
-import { PatientQueue } from './components/PatientQueue.jsx';
-import { PrescriptionList } from './components/PrescriptionList.jsx';
-import { Footer } from './components/Footer.jsx';
-
-import styles from './App.module.css';
+import { Layout } from './pages/Layout.jsx';
+import { DashboardPage } from './pages/DashboardPage.jsx';
+import { PatientsPage } from './pages/PatientsPage.jsx';
+import { PatientDetailsPage } from './pages/PatientDetailsPage.jsx';
+import { PrescriptionsPage } from './pages/PrescriptionsPage.jsx';
+import { PrescriptionDetailsPage } from './pages/PrescriptionDetailsPage.jsx';
+import { AccessibilityPage } from './pages/AccessibilityPage.jsx';
+import { NotFoundPage } from './pages/NotFoundPage.jsx';
 
 export function CareBridgeApp() {
-  const {
-    patientQueue,
-    addPatient,
-    completePatient,
-    prescriptions,
-    addPrescription,
-    toggleMedicationTaken,
-    announce,
-    speak,
-    language
-  } = useCareBridge();
-
-  // Local state for queue UI filtering and search (Local State Pattern)
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // ---------------------------------------------------------------------------
-  // DERIVED STATE PATTERN (useMemo)
-  // ---------------------------------------------------------------------------
-
-  // 1. Filtered patient queue derived from source queue, filter, and search
-  const filteredQueue = useMemo(() => {
-    return patientQueue.filter((patient) => {
-      if (activeFilter !== 'all' && patient.priority !== activeFilter) {
-        return false;
-      }
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      const matchName = patient.name.toLowerCase().includes(q);
-      const matchMrn = patient.mrn.toLowerCase().includes(q);
-      const matchStream = patient.stream.toLowerCase().includes(q);
-      const matchSymptoms = patient.symptoms?.some((s) => s.toLowerCase().includes(q));
-
-      return matchName || matchMrn || matchStream || matchSymptoms;
-    });
-  }, [patientQueue, activeFilter, searchQuery]);
-
-  // 2. Priority counts derived via reduce()
-  const priorityCounts = useMemo(() => {
-    return calculatePriorityCounts(patientQueue);
-  }, [patientQueue]);
-
-  // 3. Average pain level derived via reduce()
-  const averagePain = useMemo(() => {
-    return calculateAveragePainScore(patientQueue);
-  }, [patientQueue]);
-
-  // 4. Medication adherence percentage derived via reduce()
-  const adherenceStats = useMemo(() => {
-    return calculateAdherenceStats(prescriptions);
-  }, [prescriptions]);
-
-  // 5. Critical urgency flag derived via some()
-  const hasUrgent = useMemo(() => {
-    return hasUrgentPatients(patientQueue);
-  }, [patientQueue]);
-
-  // 6. Complete adherence flag derived via every()
-  const allMedsCompleted = useMemo(() => {
-    return areAllMedicationsCompleted(prescriptions);
-  }, [prescriptions]);
-
-  // ---------------------------------------------------------------------------
-  // CALLBACK EVENT HANDLERS (useCallback)
-  // ---------------------------------------------------------------------------
-
-  const handleCallPatient = useCallback((patient) => {
-    const text = `Attention: Patient ${patient.name}, Medical Record ${patient.mrn}, please report to ${patient.stream} Consultation Room 1.`;
-    speak(text, 'en', patient.id);
-    announce(`Paging patient ${patient.name} to Consultation Room 1.`, 'info');
-  }, [speak, announce]);
-
-  const handleReadAllPrescriptions = useCallback(() => {
-    if (!prescriptions.length) {
-      announce('No scheduled medications to read aloud.', 'info');
-      return;
-    }
-
-    const lines = prescriptions.map((med, idx) => {
-      const name = med.translatedNames?.[language] || med.name;
-      const inst = med.instructions?.[language] || med.instructions?.en || '';
-      return `Medication ${idx + 1}: ${name}. ${med.dosage}. Scheduled time: ${med.time}. Directions: ${inst}.`;
-    });
-
-    const fullSpeech = `Daily Prescription Regimen. Total ${prescriptions.length} medications scheduled. ` + lines.join(' Next medication: ');
-    speak(fullSpeech, language, 'all-meds');
-  }, [prescriptions, language, speak, announce]);
-
   return (
-    <div className={styles.carebridgeAppRoot}>
-      
-      {/* Keyboard Accessible Skip Link */}
-      <a href="#main-content" className={styles.skipLink}>
-        Skip to main clinical content
-      </a>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          {/* Index Route: Clinical Dashboard */}
+          <Route index element={<DashboardPage />} />
 
-      {/* Screen Reader Live Region & Active Audio Bar */}
-      <StatusBanner />
+          {/* Patients Route & Dynamic Detail Parameter (PDF Page 5-6) */}
+          <Route path="patients" element={<PatientsPage />}>
+            <Route path=":patientId" element={<PatientDetailsPage />} />
+            <Route path=":id" element={<PatientDetailsPage />} />
+          </Route>
+          <Route path="patients/:id" element={<PatientDetailsPage />} />
+          <Route path="patients/:patientId" element={<PatientDetailsPage />} />
 
-      {/* Header Landmark */}
-      <Header onReadAllPrescriptions={handleReadAllPrescriptions} />
+          {/* Prescriptions Route & Dynamic Detail Parameter */}
+          <Route path="prescriptions" element={<PrescriptionsPage />}>
+            <Route path=":prescriptionId" element={<PrescriptionDetailsPage />} />
+            <Route path=":id" element={<PrescriptionDetailsPage />} />
+          </Route>
+          <Route path="prescriptions/:id" element={<PrescriptionDetailsPage />} />
+          <Route path="prescriptions/:prescriptionId" element={<PrescriptionDetailsPage />} />
 
-      {/* Main Clinical Content Landmark */}
-      <main id="main-content" className={styles.appMainContent}>
-        <div className={styles.mainContentContainer}>
+          {/* Accessibility & Assistive Settings Route */}
+          <Route path="accessibility" element={<AccessibilityPage />} />
 
-          {/* 1. Clinical Dashboard Summary (Prop Drilling derived metrics) */}
-          <DashboardSummary
-            queueCount={patientQueue.length}
-            urgentCount={priorityCounts.urgent || 0}
-            priorityCounts={priorityCounts}
-            averagePain={averagePain}
-            adherenceStats={adherenceStats}
-            hasUrgent={hasUrgent}
-            allMedsCompleted={allMedsCompleted}
-          />
-
-          {/* 2. Two-Column Clinical Intake & Queue View */}
-          <div className={styles.portalTwoColumnLayout}>
-            <div className={styles.columnTriageForm}>
-              <PatientTriageForm
-                onAddPatient={addPatient}
-                onAnnounce={announce}
-              />
-            </div>
-            
-            <div className={styles.columnPatientQueue}>
-              {/* Prop Drilling Example: Queue passes callbacks and list down */}
-              <PatientQueue
-                patients={filteredQueue}
-                activeFilter={activeFilter}
-                searchQuery={searchQuery}
-                onFilterChange={setActiveFilter}
-                onSearchChange={setSearchQuery}
-                onCallPatient={handleCallPatient}
-                onCompletePatient={completePatient}
-              />
-            </div>
-          </div>
-
-          {/* 3. Prescription Schedule & Multilingual Reader */}
-          <PrescriptionList
-            prescriptions={prescriptions}
-            onToggleTaken={toggleMedicationTaken}
-            onAddPrescription={addPrescription}
-            onReadAllPrescriptions={handleReadAllPrescriptions}
-            onAnnounce={announce}
-          />
-
-        </div>
-      </main>
-
-      {/* Footer Landmark */}
-      <Footer />
-
-    </div>
+          {/* 404 Fallback Route */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
