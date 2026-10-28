@@ -1,6 +1,6 @@
-# CareBridge — Patient Triage & Multilingual Prescription Reader
+# CareBridge — Patient Triage & Multilingual Prescription Reader (React Edition)
 
-A responsive, accessible, single-page clinical healthcare web application designed as an authentic medical facility portal. Built with **semantic HTML5**, **modern CSS3**, and **ES6+ modular JavaScript**.
+A responsive, accessible, single-page clinical healthcare web application designed as an authentic medical facility portal. Built with **React 18 / 19**, **Vite**, **semantic HTML5**, **modern CSS3**, and **ES6+ modular JavaScript**.
 
 ---
 
@@ -10,24 +10,87 @@ All project files are saved and organized in the `Healthcare/` root directory:
 
 ```
 Healthcare/
-├── index.html           # Core semantic HTML5 portal (landmarks, forms, output, progress, ARIA)
-├── styles.css           # Modern CSS3 design tokens, theme engines, CSS Grid, Flexbox, media queries
-├── README.md            # Project architecture and running instructions
-├── DEVELOPER.md         # Comprehensive Git, GitHub workflow, NPM, and Testing runbook
-├── package.json         # NPM manifest, scripts, metadata (ES Modules)
-├── package-lock.json    # Exact dependency tree & cryptographic integrity hashes
-├── .gitignore           # Protects credentials, node_modules, and logs
-├── app.js               # Standalone legacy controller bundle (kept for reference)
+├── index.html           # React HTML5 mount shell with accessible fonts and landmarks
+├── vite.config.js       # Vite React bundler configuration (port 3000)
+├── package.json         # NPM manifest, React dependencies, and build scripts
+├── package-lock.json    # Deterministic lockfile with integrity hashes
+├── .gitignore           # Excludes node_modules/, dist/, .env, and logs
+├── DEVELOPER.md         # Developer guide (React architecture, Git, NPM runbook)
+├── legacy-index.html    # Original standalone static HTML5 portal (kept for reference)
+├── styles.css           # Modern CSS3 design tokens, theme engines, CSS Grid, Flexbox
 ├── tests/               # Automated Unit Test Suite
 │   └── error-handling.test.js # Node.js test runner suite (18 unit assertions)
-└── js/                  # ES6+ Modular Client-Side Architecture
-    ├── errors.js        # Custom error classes (ValidationError, ApiError, StorageError, PHI redaction)
-    ├── data.js          # Clinical data models, triage initial state, multilingual translations
-    ├── clinical.js      # Analytics, triage assessment, validation, and safe storage operations
-    ├── speech.js        # Web Speech API accessible voice reader (find, speech synthesis)
-    ├── render.js        # Dynamic template-literal HTML generators (map, destructuring, Object.entries)
-    └── main.js          # Application state controller, immutable spread operations, event listeners
+├── src/                 # Functional React Application Architecture
+│   ├── main.jsx         # React application root mounting onto #root
+│   ├── App.jsx          # Root component (State lifting, useMemo, useCallback)
+│   ├── styles.css       # Core CSS design tokens imported into React
+│   ├── context/
+│   │   └── CareBridgeContext.jsx # Shared context (theme, scale, language, speech)
+│   ├── hooks/
+│   │   └── useLocalStorage.js    # Custom Hook for resilient storage & multi-tab sync
+│   ├── utils/
+│   │   ├── clinicalAnalytics.js  # Triage scoring, priority & adherence math
+│   │   ├── errors.js             # Custom error hierarchy & PHI redaction
+│   │   └── speech.js             # Web Speech API audio synthesis engine
+│   ├── data/
+│   │   └── initialData.js        # Initial triage queue, medications, sample patients
+│   └── components/               # Reusable Functional Components
+│       ├── Header.jsx            # Banner, brand, clock, navigation landmarks
+│       ├── AccessibilityToolbar.jsx # Theme, text size, wide spacing, language, speech
+│       ├── DashboardSummary.jsx  # Metrics cards, emergency alerts, adherence progress
+│       ├── PatientTriageForm.jsx # Controlled form with useRef first-invalid-field focus
+│       ├── PatientQueue.jsx      # Queue view with useRef search-focus & filter tabs
+│       ├── PatientCard.jsx       # Individual patient card with Call & Discharge actions
+│       ├── PrescriptionList.jsx  # Prescriptions container & audio trigger
+│       ├── PrescriptionCard.jsx  # Multilingual prescription card with Listen button
+│       ├── MedicationForm.jsx    # Controlled add-prescription form with validation
+│       ├── StatusBanner.jsx      # Screen reader aria-live="polite" announcement bar
+│       └── Footer.jsx            # Section 508 / WCAG AAA compliance and clinical advisory
+└── js/                  # Legacy Vanilla JS modules (retained for backward compatibility)
 ```
+
+---
+
+## React Hooks Architecture
+
+1. **`useRef`**:
+   - `PatientTriageForm.jsx`: Automatically shifts focus to the first invalid input when form validation fails.
+   - `PatientQueue.jsx`: Implements quick-focus jump directly to the patient search field (`searchInputRef.current.focus()`).
+
+2. **`useMemo`**:
+   - Derived filtered patient queue based on `[patientQueue, activeFilter, searchQuery]`.
+   - Priority counts (`urgent`, `priority`, `routine`) calculated via `reduce`.
+   - Mean patient pain score calculated from waiting queue.
+   - Real-time medication adherence percentage (`takenCount / totalCount * 100`).
+
+3. **`useCallback`**:
+   - Stable references for `handleAddPatient`, `handleCompletePatient`, `handleCallPatient`, `handleToggleMedication`, `handleAddPrescription`, and `handleReadAllPrescriptions`.
+
+4. **`useContext`**:
+   - `CareBridgeContext` distributes theme, fontScale, wideSpacing, active language, and screen reader announcements without prop-drilling.
+
+5. **`useLocalStorage` (Custom Hook)**:
+   - Synchronizes patient queue, scheduled prescriptions, and clinical accessibility preferences with browser localStorage and handles storage events across tabs.
+
+---
+
+## Running the Application Locally
+
+```bash
+# Start local React development server
+npm run dev
+
+# Or run using standard start command
+npm start
+
+# Run automated tests
+npm test
+
+# Build production bundle
+npm run build
+```
+
+Open `http://localhost:3000` in any modern web browser.
 
 ---
 
