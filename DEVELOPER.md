@@ -256,3 +256,4 @@ npm test
 1. Turn off device Wi-Fi or set Network to **Offline** in browser DevTools.
 2. Search for a medication in the drug formulary lookup.
 3. *Expected Result:* The application catches `ApiError` (Status 0 / Network Failure), presents a polite notification via the live announcer, and does not break other triage or voice features.
+
