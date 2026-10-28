@@ -15,6 +15,7 @@ This guide is intended for clinical portal developers and contributors. In adher
 8. [Comprehensive Verification & Testing Runbook](#8-comprehensive-verification--testing-runbook)
 9. [React State Management Patterns & Context API](#9-react-state-management-patterns--context-api)
 10. [Styling Architecture: CSS Modules, Tailwind CSS & Styled-components](#10-styling-architecture-css-modules-tailwind-css--styled-components)
+11. [Node.js Runtime, Core Modules, HTTP & Express Guide](#11-nodejs-runtime-core-modules-http--express-guide)
 
 ---
 
@@ -325,3 +326,113 @@ export const StyledTriageBadge = styled.span`
     `}
 `;
 ```
+
+
+---
+
+## 11. Node.js Runtime, Core Modules, HTTP & Express Guide
+
+### 11.1 Runtime & Event Loop Concurrency
+- **V8 Engine**: Google's high-performance C++ engine compiles JavaScript directly to native machine code.
+- **libuv**: Multi-platform C library providing an asynchronous, event-driven I/O loop and thread pool.
+- **Event Loop & Single-Threaded Non-Blocking I/O**:
+  Node executes JavaScript on a single thread. When performing costly operations (disk file reads, network calls, crypto), Node delegates them to background threads managed by libuv. The main thread remains responsive to handle incoming clinical requests.
+
+```mermaid
+flowchart TD
+    ClientReq["Incoming HTTP Request"] --> EventLoop["Main Single Thread (Event Loop)"]
+    EventLoop -->|"Non-blocking I/O Task"| LibUV["libuv Thread Pool (fs, DNS, Crypto)"]
+    LibUV -->|"Operation Completed"| CallbackQueue["Event Callback Queue"]
+    CallbackQueue --> EventLoop
+    EventLoop --> Res["HTTP Response Sent to Client"]
+```
+
+### 11.2 CommonJS vs. ES Modules (Node 26 LTS)
+
+CareBridge is authored as modern **ECMAScript Modules (ESM)** (`"type": "module"` in `package.json`).
+
+| Dimension | CommonJS (`.cjs` / default) | ES Modules (`.mjs` / `"type": "module"`) | CareBridge Implementation |
+| :--- | :--- | :--- | :--- |
+| **Import Syntax** | `const x = require('x');` | `import x from 'x';` | `import express from 'express';` |
+| **Export Syntax** | `module.exports = ...;` | `export default ...;` / `export ...;` | `export default router;` |
+| **Loading Phase** | Synchronous at runtime | Static at parse-time | Enables dead-code elimination & tree shaking |
+| **File Resolution** | `.js`, `.cjs` | `.js`, `.mjs` | Native `.js` with `"type": "module"` |
+| **`__dirname` / `__filename`** | Available globally as scope variables | Not available in scope | Resolved via `fileURLToPath(import.meta.url)` |
+| **Top-Level Await** | Unsupported (requires async IIFE) | Supported natively | Clean asynchronous initialization |
+
+```javascript
+// Resolving __dirname in ES Modules (CareBridge pattern)
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+```
+
+### 11.3 Core Modules: `fs`, `path`, and `process`
+
+#### 1. `node:fs` & `node:fs/promises` (File System)
+CareBridge persists clinical patient triage data and multilingual prescriptions as structured JSON on disk:
+- **Promises API**: `readFile` and `writeFile` allow clean `async/await` file operations without callback hell.
+- **Streaming API (`createReadStream`)**: Large clinical audit logs are piped directly into the HTTP response stream (`readStream.pipe(res)`), preventing memory exhaustion from buffering entire files.
+
+#### 2. `node:path` (Cross-Platform Paths)
+Ensures seamless path resolution across Windows and POSIX (Linux/macOS) servers:
+```javascript
+const PATIENTS_FILE = path.join(__dirname, '..', 'data', 'patients.json');
+```
+
+#### 3. `node:process` (Runtime Metadata & Signal Handling)
+- `process.env`: Reads `PORT` and `NODE_ENV`.
+- `process.argv`: Parses command-line flags (`--port 5000`).
+- `process.uptime()` & `process.memoryUsage()`: Provides real-time health metrics.
+- Signal Handling: Handles `SIGINT` (Ctrl+C) and `SIGTERM` for zero-downtime, graceful HTTP connection draining.
+
+### 11.4 Raw HTTP Server vs. Express.js Web Framework
+
+CareBridge provides both implementations for architectural comparison:
+
+```mermaid
+flowchart LR
+    subgraph RawHTTP ["Raw HTTP Server (raw-server.js)"]
+        RawCreate["http.createServer()"]
+        RawRoute["Manual req.url & req.method matching"]
+        RawHeader["Manual res.writeHead(status, headers)"]
+        RawStream["fileStream.pipe(res)"]
+    end
+    subgraph ExpressApp ["Express Framework (app.js)"]
+        ExpApp["app = express()"]
+        ExpMid["app.use(helmet()), app.use(cors()), app.use(express.json())"]
+        ExpRouter["app.use('/api/patients', patientRouter)"]
+        ExpErr["4-arg Error Middleware (err, req, res, next)"]
+    end
+```
+
+| Criterion | Raw Node.js (`raw-server.js`) | Express.js (`app.js` + `server.js`) |
+| :--- | :--- | :--- |
+| **Module** | `node:http` (core built-in) | `express` framework (`npm install express`) |
+| **Routing** | Manual `if/else` checks on `req.url` & `req.method` | Declarative `app.get()`, `app.post()`, `express.Router()` |
+| **Body Parsing** | Manual chunk buffering (`req.on('data')`) | Automatic JSON/URL parsing (`express.json()`) |
+| **Middleware** | Must be implemented manually | Composable chain via `app.use()` |
+| **Error Handling** | Socket `clientError` event listener | Centralized 4-argument `(err, req, res, next)` handler |
+| **Best Used For** | Micro-proxies, low-level streaming, learning runtime internals | Production clinical REST APIs, enterprise web applications |
+
+### 11.5 Security & Production Best Practices
+1. **Security Headers (`helmet`)**: Sets HTTP response headers (`X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`).
+2. **CORS (`cors`)**: Allows the frontend development server (`http://localhost:3000`) to securely access the clinical API.
+3. **HIPAA/PHI Safe Logging**: Custom middleware redacts sensitive patient attributes (`mrn`, `name`, `tel`) before logging to terminal or file.
+4. **Graceful Shutdown**: Intercepts `SIGINT`/`SIGTERM` to allow active in-flight clinical operations to finish before terminating the Node process.
+
+### 11.6 Student Checklist Compliance Matrix (PDF Page 13)
+
+| Checklist Topic | Requirement | Implementation in CareBridge | Verification Command |
+| :--- | :--- | :--- | :--- |
+| **1. Node Runtime** | V8 + libuv, single-threaded event loop, non-blocking I/O. | Documented in `DEVELOPER.md` §11.1; asynchronous handlers in all routes. | `npm test` |
+| **2. Modules** | CommonJS vs ESM distinction, `import`/`export`. | Configured with `"type": "module"`, ESM syntax throughout. | `node --version` (v26.12.1) |
+| **3. Core APIs** | `fs` promises & streaming, `path`, `process.env`, `process.argv`. | `data/patients.json`, streaming export in `routes/patients.js`, `server.js` port flags. | `node --test tests/server.test.js` |
+| **4. NPM** | `package.json`, scripts, dependencies, `.gitignore`. | Configured with `server`, `server:dev`, `server:raw`, `test:server`, `test:client`. | `npm run audit` |
+| **5. HTTP Server** | `http.createServer`, headers, status codes, 404/500, stream pipe. | Complete native server implemented in [`raw-server.js`](file:///d:/Hack-O-Week--3rd%20sem/Healthcare/raw-server.js). | `npm run server:raw` |
+| **6. Express** | Routing, `app.use()`, `express.json()`, `express.Router`, static files. | Implemented in [`app.js`](file:///d:/Hack-O-Week--3rd%20sem/Healthcare/app.js) with 4 modular routers. | `npm run server` |
+| **7. Security** | Environment variables, `helmet`, `cors`, safe logging. | Configured in `app.js` and `middleware/logger.js`. | Verified in `tests/server.test.js` |
+| **8. Testing & Debug** | `supertest`, Node test runner, `node --inspect`, `console.log`. | 18 integration tests in `tests/server.test.js` using `supertest` & `node:test`. | `npm test` (36 total tests pass) |
+| **9. Structure** | Separated `server.js` and `app.js`, `routes/`, `data/`, `.gitignore`. | Complete clean architecture matching PDF Page 12 diagram. | Verified directory layout |

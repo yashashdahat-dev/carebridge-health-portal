@@ -1,0 +1,162 @@
+[
+  {
+    "id": "rx-1",
+    "name": "Amlodipine Besylate",
+    "dosage": "5 mg",
+    "time": "08:00 AM",
+    "mealTiming": "after",
+    "doctor": "Dr. S. K. Rao (Cardiology)",
+    "taken": true,
+    "lastTakenTime": "08:15 AM",
+    "instructions": {
+      "en": "Take 1 tablet in the morning with a full glass of water. Monitor blood pressure weekly.",
+      "hi": "सुबह 1 गोली एक गिलास पानी के साथ लें। हर हफ्ते रक्तचाप की जांच करें।",
+      "mr": "सकाळी 1 गोळी भरपूर पाण्यासोबत घ्या. दर आठवड्याला रक्तदाब तपासा."
+    },
+    "translatedNames": {
+      "en": "Amlodipine Besylate",
+      "hi": "एम्लोडिपिन बेसिलेट",
+      "mr": "अॅम्लोडिपिन बेसिलेट"
+    }
+  },
+  {
+    "id": "rx-2",
+    "name": "Metformin Hydrochloride",
+    "dosage": "500 mg",
+    "time": "01:30 PM",
+    "mealTiming": "with",
+    "doctor": "Dr. Ananya Sen (Endocrinology)",
+    "taken": true,
+    "lastTakenTime": "01:45 PM",
+    "instructions": {
+      "en": "Take 1 tablet during or immediately following lunch to minimize gastrointestinal discomfort.",
+      "hi": "पेट की परेशानी से बचने के लिए दोपहर के भोजन के साथ या तुरंत बाद 1 गोली लें।",
+      "mr": "पोटाचा त्रास टाळण्यासाठी दुपारच्या जेवणासोबत किंवा लगेच 1 गोळी घ्या."
+    },
+    "translatedNames": {
+      "en": "Metformin Hydrochloride",
+      "hi": "मेटफॉर्मिन हाइड्रोक्लोराइड",
+      "mr": "मेटफॉर्मिन हायड्रोक्लोराइड"
+    }
+  },
+  {
+    "id": "rx-3",
+    "name": "Atorvastatin Calcium",
+    "dosage": "20 mg",
+    "time": "09:00 PM",
+    "mealTiming": "after",
+    "doctor": "Dr. S. K. Rao (Cardiology)",
+    "taken": false,
+    "lastTakenTime": null,
+    "instructions": {
+      "en": "Take 1 tablet at night after dinner. Avoid grapefruit juice while on this medication.",
+      "hi": "रात को रात के खाने के बाद 1 गोली लें। अंगूर का रस न पिएं।",
+      "mr": "रात्री जेवणानंतर 1 गोळी घ्या. हे औषध घेत असताना ग्रेपफ्रूटचा रस पिणे टाळा."
+    },
+    "translatedNames": {
+      "en": "Atorvastatin Calcium",
+      "hi": "एटोरवास्टेटिन कैल्शियम",
+      "mr": "अ‍ॅटोर्वास्टॅटिन कॅल्शियम"
+    }
+  },
+  {
+    "id": "rx-4",
+    "name": "Paracetamol",
+    "dosage": "650 mg",
+    "time": "02:00 PM",
+    "mealTiming": "after",
+    "doctor": "Dr. Rajesh Iyer (General Medicine)",
+    "taken": false,
+    "lastTakenTime": null,
+    "instructions": {
+      "en": "Take as needed for fever or mild-to-moderate pain. Maximum 3 doses in 24 hours.",
+      "hi": "बुखार या हल्के दर्द के लिए आवश्यकतानुसार लें। 24 घंटे में अधिकतम 3 खुराक।",
+      "mr": "ताप किंवा सौम्य वेदनेसाठी आवश्यकतेनुसार घ्या. 24 तासांत जास्तीत जास्त 3 डोस."
+    },
+    "translatedNames": {
+      "en": "Paracetamol",
+      "hi": "पैरासिटामोल",
+      "mr": "पॅरासिटामॉल"
+    }
+  },
+  {
+    "id": "rx-8687",
+    "name": "Ibuprofen",
+    "dosage": "400 mg",
+    "time": "04:00 PM",
+    "mealTiming": "after",
+    "doctor": "Dr. S. K. Rao",
+    "taken": false,
+    "lastTakenTime": null,
+    "instructions": {
+      "en": "Take 400 mg as prescribed.",
+      "hi": "निर्देशानुसार 400 mg लें।",
+      "mr": "निर्देशांनुसार 400 mg घ्या."
+    },
+    "translatedNames": {
+      "en": "Ibuprofen",
+      "hi": "Ibuprofen",
+      "mr": "Ibuprofen"
+    }
+  },
+  {
+    "id": "rx-8120",
+    "name": "Ibuprofen",
+    "dosage": "400 mg",
+    "time": "04:00 PM",
+    "mealTiming": "after",
+    "doctor": "Dr. S. K. Rao",
+    "taken": false,
+    "lastTakenTime": null,
+    "instructions": {
+      "en": "Take 400 mg as prescribed.",
+      "hi": "निर्देशानुसार 400 mg लें।",
+      "mr": "निर्देशांनुसार 400 mg घ्या."
+    },
+    "translatedNames": {
+      "en": "Ibuprofen",
+      "hi": "Ibuprofen",
+      "mr": "Ibuprofen"
+    }
+  },
+  {
+    "id": "rx-2606",
+    "name": "Ibuprofen",
+    "dosage": "400 mg",
+    "time": "04:00 PM",
+    "mealTiming": "after",
+    "doctor": "Dr. S. K. Rao",
+    "taken": false,
+    "lastTakenTime": null,
+    "instructions": {
+      "en": "Take 400 mg as prescribed.",
+      "hi": "निर्देशानुसार 400 mg लें।",
+      "mr": "निर्देशांनुसार 400 mg घ्या."
+    },
+    "translatedNames": {
+      "en": "Ibuprofen",
+      "hi": "Ibuprofen",
+      "mr": "Ibuprofen"
+    }
+  },
+  {
+    "id": "rx-7772",
+    "name": "Ibuprofen",
+    "dosage": "400 mg",
+    "time": "04:00 PM",
+    "mealTiming": "after",
+    "doctor": "Dr. S. K. Rao",
+    "taken": false,
+    "lastTakenTime": null,
+    "instructions": {
+      "en": "Take 400 mg as prescribed.",
+      "hi": "निर्देशानुसार 400 mg लें।",
+      "mr": "निर्देशांनुसार 400 mg घ्या."
+    },
+    "translatedNames": {
+      "en": "Ibuprofen",
+      "hi": "Ibuprofen",
+      "mr": "Ibuprofen"
+    }
+  }
+]

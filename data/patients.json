@@ -1,0 +1,79 @@
+[
+  {
+    "id": "P-101",
+    "name": "Vikram Malhotra",
+    "mrn": "MRN-72910",
+    "age": 58,
+    "tel": "+91 98201 11234",
+    "stream": "Cardiology",
+    "painLevel": 9,
+    "symptoms": [
+      "Chest Tightness / Dyspnea",
+      "High Fever (> 101°F)"
+    ],
+    "accommodations": [
+      "Wheelchair Access",
+      "Audio Prescription"
+    ],
+    "priority": "urgent",
+    "arrivalTime": "10:42 AM",
+    "notes": "Retrosternal pressure, diaphoresis. SpO2: 92%, BP: 155/95."
+  },
+  {
+    "id": "P-102",
+    "name": "Sunita Deshmukh",
+    "mrn": "MRN-48201",
+    "age": 42,
+    "tel": "+91 98450 22345",
+    "stream": "Orthopedic Trauma",
+    "painLevel": 6,
+    "symptoms": [
+      "Musculoskeletal Trauma"
+    ],
+    "accommodations": [
+      "Wheelchair Access",
+      "Sign Language Interpreter"
+    ],
+    "priority": "priority",
+    "arrivalTime": "10:55 AM",
+    "notes": "Suspected distal radius hairline fracture from fall."
+  },
+  {
+    "id": "P-103",
+    "name": "Aarav Kulkarni",
+    "mrn": "MRN-19384",
+    "age": 29,
+    "tel": "+91 97110 33456",
+    "stream": "General Medicine",
+    "painLevel": 3,
+    "symptoms": [
+      "Persistent Dry Cough",
+      "Generalized Fatigue"
+    ],
+    "accommodations": [
+      "Large-print Display"
+    ],
+    "priority": "routine",
+    "arrivalTime": "11:05 AM",
+    "notes": "Mild upper respiratory tract symptoms for 3 days."
+  },
+  {
+    "id": "P-104",
+    "name": "Fatima Sheikh",
+    "mrn": "MRN-60472",
+    "age": 67,
+    "tel": "+91 99300 44567",
+    "stream": "Neurology",
+    "painLevel": 8,
+    "symptoms": [
+      "Severe Migraine / Vertigo"
+    ],
+    "accommodations": [
+      "Wheelchair Access",
+      "High-contrast Interface"
+    ],
+    "priority": "urgent",
+    "arrivalTime": "11:15 AM",
+    "notes": "Acute vestibular vertigo with photophobia and nausea."
+  }
+]
