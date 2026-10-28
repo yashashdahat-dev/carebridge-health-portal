@@ -191,3 +191,4 @@ export const fetchMedicationSafetyData = async (medicationName) => {
     throw networkErr;
   }
 };
+

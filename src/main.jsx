@@ -22,3 +22,4 @@ if (rootElement) {
 } else {
   console.error('Failed to locate root element #root in document.');
 }
+

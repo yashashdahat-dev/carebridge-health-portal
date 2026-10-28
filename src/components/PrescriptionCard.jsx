@@ -119,3 +119,4 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
     </article>
   );
 }
+

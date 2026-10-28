@@ -245,3 +245,4 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
     </div>
   );
 }
+

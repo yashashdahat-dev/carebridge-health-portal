@@ -502,3 +502,4 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     </section>
   );
 }
+

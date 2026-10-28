@@ -5,11 +5,12 @@
   "type": "module",
   "main": "js/main.js",
   "scripts": {
-    "dev": "vite",
+    "start": "serve -l 3000 .",
+    "serve": "serve -l 3000 .",
+    "dev": "serve -l 3000 .",
+    "dev:react": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "serve": "vite --port 3000",
-    "start": "vite --port 3000",
     "test": "node --check js/errors.js && node --check js/clinical.js && node --check js/speech.js && node --check js/render.js && node --check js/main.js && node --test tests/*.test.js",
     "audit": "npm audit"
   },

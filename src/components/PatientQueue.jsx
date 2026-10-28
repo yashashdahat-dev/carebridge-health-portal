@@ -52,7 +52,7 @@ export function PatientQueue({
 
       {/* Filter and Search Controls Bar */}
       <div className="queue-controls-bar" role="region" aria-label="Queue Filter and Search Options">
-        
+
         {/* Urgency Filter Tabs */}
         <div className="filter-tabs-group" role="tablist" aria-label="Filter queue by priority tier">
           <button
@@ -140,3 +140,4 @@ export function PatientQueue({
     </section>
   );
 }
+

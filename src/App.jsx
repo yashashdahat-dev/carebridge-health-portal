@@ -230,3 +230,4 @@ export function CareBridgeApp() {
 export default function App() {
   return <CareBridgeApp />;
 }
+

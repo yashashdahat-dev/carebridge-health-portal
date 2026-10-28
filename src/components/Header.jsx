@@ -80,3 +80,4 @@ export function Header({ onReadAllPrescriptions }) {
     </header>
   );
 }
+

@@ -9,7 +9,7 @@ export function Footer() {
   return (
     <footer className="app-footer" role="contentinfo">
       <div className="footer-top-container">
-        
+
         <div className="footer-brand-summary">
           <h3>CareBridge Health System</h3>
           <p>
@@ -54,3 +54,4 @@ export function Footer() {
     </footer>
   );
 }
+

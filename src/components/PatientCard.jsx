@@ -115,3 +115,4 @@ export function PatientCard({ patient, onCallPatient, onCompletePatient }) {
     </article>
   );
 }
+
