@@ -1,0 +1,96 @@
+// =============================================================================
+// CareBridge Clinical Portal — Prisma Schema Definition
+// File: prisma/schema.prisma
+// 
+// Demonstrates:
+// - Prisma Schema declaration (PDF Page 2)
+// - Model mapping, field types, relation attributes (@relation)
+// - Auto-incrementing and default values (@default)
+// - Unique constraints and explicit indexes (@@index)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Department {
+  id               Int       @id @default(autoincrement())
+  code             String    @unique
+  name             String
+  floor            Int       @default(1)
+  emergencyCapable Boolean   @default(true)
+  patients         Patient[]
+  createdAt        DateTime  @default(now())
+
+  @@map("departments")
+}
+
+model Patient {
+  id            String         @id
+  mrn           String         @unique
+  fullName      String
+  age           Int
+  phone         String?
+  departmentId  Int
+  department    Department     @relation(fields: [departmentId], references: [id])
+  painLevel     Int
+  priority      String         // 'urgent' | 'priority' | 'routine'
+  arrivalTime   String
+  notes         String?
+  discharged    Boolean        @default(false)
+  prescriptions Prescription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([priority])
+  @@index([mrn])
+  @@index([createdAt])
+  @@map("patients")
+}
+
+model Prescription {
+  id                String    @id
+  patientId         String?
+  patient           Patient?  @relation(fields: [patientId], references: [id])
+  drugName          String
+  dosage            String
+  scheduledTime     String
+  mealTiming        String    // 'before' | 'with' | 'after'
+  prescribingDoctor String
+  taken             Boolean   @default(false)
+  lastTakenAt       DateTime?
+  instructionsEn    String
+  instructionsHi    String?
+  instructionsMr    String?
+  createdAt         DateTime  @default(now())
+
+  @@index([patientId])
+  @@index([taken])
+  @@map("prescriptions")
+}
+
+model Symptom {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  isCritical Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@map("symptoms")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  eventType String
+  actor     String   @default("system")
+  entity    String
+  entityId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}

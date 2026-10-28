@@ -16,6 +16,7 @@ This guide is intended for clinical portal developers and contributors. In adher
 9. [React State Management Patterns & Context API](#9-react-state-management-patterns--context-api)
 10. [Styling Architecture: CSS Modules, Tailwind CSS & Styled-components](#10-styling-architecture-css-modules-tailwind-css--styled-components)
 11. [Node.js Runtime, Core Modules, HTTP & Express Guide](#11-nodejs-runtime-core-modules-http--express-guide)
+12. [Relational Databases, ORM, NoSQL, and RESTful API Best Practices](#12-relational-databases-orm-nosql-and-restful-api-best-practices)
 
 ---
 
@@ -436,3 +437,129 @@ flowchart LR
 | **7. Security** | Environment variables, `helmet`, `cors`, safe logging. | Configured in `app.js` and `middleware/logger.js`. | Verified in `tests/server.test.js` |
 | **8. Testing & Debug** | `supertest`, Node test runner, `node --inspect`, `console.log`. | 18 integration tests in `tests/server.test.js` using `supertest` & `node:test`. | `npm test` (36 total tests pass) |
 | **9. Structure** | Separated `server.js` and `app.js`, `routes/`, `data/`, `.gitignore`. | Complete clean architecture matching PDF Page 12 diagram. | Verified directory layout |
+
+
+---
+
+## 12. Relational Databases, ORM, NoSQL, and RESTful API Best Practices
+
+### 12.1 Relational Databases (PostgreSQL / MySQL) & Schema Blueprint
+
+Relational databases organize clinical data into tables with strictly defined schemas, columns, constraints, and data types (IBM database blueprint definition).
+- **Primary Keys**: Uniquely identify each record (e.g., `patients.id`, `departments.id`).
+- **Foreign Keys**: Enforce referential integrity between related entities (e.g., `patients.department_id` references `departments.id`).
+- **Indexes**: Specialized B-tree data structures that accelerate row lookups without scanning entire tables (e.g., `idx_patients_priority`, `idx_patients_mrn`).
+
+Complete production DDL is provided in [`db/schema.sql`](db/schema.sql).
+
+### 12.2 SQL Queries (CRUD, JOINs, Aggregations)
+
+CareBridge implements canonical SQL patterns verified through [`routes/sqlDemo.js`](routes/sqlDemo.js):
+
+#### 1. Standard CRUD Queries
+```sql
+-- SELECT with WHERE and ORDER BY
+SELECT * FROM patients WHERE priority = 'urgent' ORDER BY pain_level DESC;
+
+-- INSERT
+INSERT INTO patients (id, mrn, full_name, age, department_id, pain_level, priority, arrival_time)
+VALUES ('P-105', 'MRN-90210', 'Anil Mehta', 50, 1, 9, 'urgent', '11:30:00');
+
+-- UPDATE
+UPDATE prescriptions SET taken = TRUE, last_taken_at = CURRENT_TIMESTAMP WHERE id = 'rx-1';
+
+-- DELETE
+DELETE FROM patients WHERE id = 'P-105';
+```
+
+#### 2. Relational JOINs (Combining Entities)
+```sql
+-- INNER JOIN: Retrieve patients along with their assigned department details
+SELECT 
+  p.id, p.mrn, p.full_name, p.priority, p.pain_level, 
+  d.name AS department_name, d.floor
+FROM patients p
+INNER JOIN departments d ON p.department_id = d.id
+WHERE p.priority = 'urgent';
+```
+
+#### 3. SQL Aggregations & Analytics
+```sql
+-- Group summary: Patient counts, average pain score, and pain boundaries by department
+SELECT 
+  d.name AS department, 
+  COUNT(p.id) AS patient_count, 
+  ROUND(AVG(p.pain_level), 1) AS avg_pain_score,
+  MIN(p.pain_level) AS min_pain,
+  MAX(p.pain_level) AS max_pain
+FROM departments d
+LEFT JOIN patients p ON d.id = p.department_id
+GROUP BY d.id, d.name
+ORDER BY patient_count DESC;
+```
+
+### 12.3 Object-Relational Mapping (ORM): Prisma vs. Sequelize
+
+ORMs allow Node.js applications to interact with SQL databases using typed models, class objects, and methods instead of raw SQL strings.
+
+| Feature | Prisma ORM | Sequelize ORM |
+| :--- | :--- | :--- |
+| **Schema Definition** | Declarative in `prisma/schema.prisma` file | Programmatic in JS (`sequelize.define()`) |
+| **Type Safety** | Fully generated type-safe client (`@prisma/client`) | Partial typings; model attributes mapped in JS |
+| **Migrations** | Native CLI tool (`prisma migrate dev`) | Sequelize CLI (`sequelize db:migrate`) |
+| **CareBridge Implementation** | Provided in [`prisma/schema.prisma`](prisma/schema.prisma) | Provided in [`models/sequelizeModels.js`](models/sequelizeModels.js) |
+
+### 12.4 NoSQL Databases: MongoDB & Mongoose Document Schemas
+
+MongoDB stores records as JSON-like BSON documents grouped into collections rather than rigid tables.
+- **Mongoose ODM**: Enforces a strict application-level schema before writing documents to MongoDB collections.
+- **Validators & Virtuals**: Defines min/max bounds, regex matching (e.g. MRN format), and computed properties (`isEmergency` virtual derived from `painLevel >= 8`).
+- **Pre-save Hooks**: Automatically normalizes fields before storage (e.g., converting MRN to uppercase, synchronizing priority).
+
+Full Mongoose models and schema definitions are in [`models/mongooseModels.js`](models/mongooseModels.js).
+
+### 12.5 RESTful API Best Practices
+
+CareBridge follows REST architectural constraints outlined on Page 3–4 of the PDF:
+
+#### 1. URI Versioning (`/api/v1/*`)
+- Breaking changes require major version increments:
+  - `GET /api/v1/patients`
+  - `GET /api/v1/prescriptions`
+  - `GET /api/v1/analytics`
+- Non-breaking aliases are provided for legacy clients (`/api/patients`).
+
+#### 2. Server-Side Pagination
+- Query parameters: `?page=1&size=10`.
+- Response metadata payload:
+  ```json
+  {
+    "success": true,
+    "pagination": {
+      "page": 1,
+      "size": 10,
+      "totalItems": 24,
+      "totalPages": 3,
+      "hasNext": true,
+      "hasPrev": false
+    },
+    "data": [ ... ]
+  }
+  ```
+- **RFC 5988 Link Headers**:
+  `Link: <http://localhost:5000/api/v1/patients?page=1&size=10>; rel="self", <http://localhost:5000/api/v1/patients?page=1&size=10>; rel="first", <http://localhost:5000/api/v1/patients?page=2&size=10>; rel="next", <http://localhost:5000/api/v1/patients?page=3&size=10>; rel="last"`
+- Accompanying headers: `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`.
+
+#### 3. Filtering & Multi-Field Sorting
+- **Filtering**: `?priority=urgent&stream=Cardiology&search=deshmukh`
+- **Multi-Field Sorting**: `?sort=-painLevel,name` (prefix `-` for descending, e.g. highest pain scores first, followed by alphabetical name sorting).
+
+### 12.6 Centralized Logging & Error Handling Architecture
+- **Multi-Transport Logger ([`utils/logger.js`](utils/logger.js))**:
+  - Colorized console output for interactive developer debugging.
+  - Asynchronous persistent disk logging to `logs/combined.log` and `logs/error.log`.
+  - Automatic HIPAA/PHI sanitization redacting phone numbers, patient names, and MRNs.
+- **Centralized Error Middleware ([`middleware/errorHandler.js`](middleware/errorHandler.js))**:
+  - 4-argument Express error signature `(err, req, res, next)`.
+  - Maps custom error classes (`ValidationError`, `NotFoundError`, `StorageError`) to appropriate HTTP status codes (400, 404, 500).
+  - Displays error stack trace only in `development` mode; hides stack traces in `production` to prevent information disclosure.

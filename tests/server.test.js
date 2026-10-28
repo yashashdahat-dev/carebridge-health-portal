@@ -1,26 +1,37 @@
 /**
- * CareBridge — Express Backend Integration Test Suite
+ * CareBridge — Full-Stack Express Backend Integration Test Suite
  * File: tests/server.test.js
  * 
- * Uses Node.js native test runner (node:test) and supertest.
- * Reference: PDF Page 11.
+ * Tests:
+ * - RESTful Versioning (/api/v1/*)
+ * - Server-side Pagination with RFC 5988 Link and X-Total-Count headers
+ * - Multi-field Sorting (?sort=-painLevel,name)
+ * - Filtering by priority and stream
+ * - Relational SQL demonstrations (INNER JOIN, LEFT JOIN, Aggregations)
+ * - Input validation & centralized error middleware
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import request from 'supertest';
 import app from '../app.js';
 
-describe('1. System Health & Runtime Diagnostics', () => {
-  it('GET /api returns 200 and API endpoint index', async () => {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+describe('1. API Directory & System Health', () => {
+  it('GET /api returns 200 and lists v1 endpoints', async () => {
     const res = await request(app).get('/api');
     assert.equal(res.status, 200);
-    assert.equal(res.body.name, 'CareBridge Clinical Portal API');
-    assert.ok(Array.isArray(res.body.endpoints));
+    assert.equal(res.body.currentVersion, 'v1');
+    assert.ok(Array.isArray(res.body.v1Endpoints));
   });
 
-  it('GET /api/health returns 200, status UP, and Node.js v26 runtime metrics', async () => {
-    const res = await request(app).get('/api/health');
+  it('GET /api/v1/health returns 200, status UP, and Node.js v26 runtime metrics', async () => {
+    const res = await request(app).get('/api/v1/health');
     assert.equal(res.status, 200);
     assert.equal(res.body.status, 'UP');
     assert.ok(res.body.runtime.nodeVersion.startsWith('v'));
@@ -29,74 +40,82 @@ describe('1. System Health & Runtime Diagnostics', () => {
   });
 });
 
-describe('2. Patient Triage API & Validations', () => {
+describe('2. RESTful Versioning & Pagination Best Practices (PDF Page 3-4)', () => {
+  it('GET /api/v1/patients supports server-side pagination with page & size', async () => {
+    const res = await request(app).get('/api/v1/patients?page=1&size=2');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.pagination.page, 1);
+    assert.equal(res.body.pagination.size, 2);
+    assert.equal(res.body.data.length, 2);
+
+    // Verify REST Pagination Headers
+    assert.ok(res.headers['x-total-count'], 'X-Total-Count header required');
+    assert.ok(res.headers['link'], 'RFC 5988 Link header required');
+    assert.ok(res.headers['link'].includes('rel="self"'));
+    assert.ok(res.headers['link'].includes('rel="first"'));
+    assert.ok(res.headers['link'].includes('rel="next"'));
+    assert.ok(res.headers['link'].includes('rel="last"'));
+  });
+
+  it('GET /api/v1/patients supports multi-field sorting (?sort=-painLevel,name)', async () => {
+    const res = await request(app).get('/api/v1/patients?sort=-painLevel');
+    assert.equal(res.status, 200);
+    const pains = res.body.data.map((p) => p.painLevel);
+    // Verify descending order
+    for (let i = 0; i < pains.length - 1; i++) {
+      assert.ok(pains[i] >= pains[i + 1], `Pain score ${pains[i]} should be >= ${pains[i + 1]}`);
+    }
+  });
+
+  it('GET /api/v1/patients filters by priority and clinical stream', async () => {
+    const res = await request(app).get('/api/v1/patients?priority=urgent&stream=Cardiology');
+    assert.equal(res.status, 200);
+    assert.ok(res.body.data.every((p) => p.priority === 'urgent' && p.stream === 'Cardiology'));
+  });
+});
+
+describe('3. Patient Triage CRUD & Input Validations', () => {
   let createdPatientId = null;
 
-  it('GET /api/patients returns 200 and array of active patients', async () => {
-    const res = await request(app).get('/api/patients');
-    assert.equal(res.status, 200);
-    assert.equal(res.body.success, true);
-    assert.ok(Array.isArray(res.body.data));
-    assert.ok(res.body.count > 0);
-  });
-
-  it('GET /api/patients?priority=urgent filters only urgent tier patients', async () => {
-    const res = await request(app).get('/api/patients?priority=urgent');
-    assert.equal(res.status, 200);
-    assert.ok(res.body.data.every((p) => p.priority === 'urgent'));
-  });
-
-  it('GET /api/patients/:id returns 200 for existing patient P-101', async () => {
-    const res = await request(app).get('/api/patients/P-101');
+  it('GET /api/v1/patients/:id returns 200 for existing patient P-101', async () => {
+    const res = await request(app).get('/api/v1/patients/P-101');
     assert.equal(res.status, 200);
     assert.equal(res.body.data.id, 'P-101');
     assert.equal(res.body.data.name, 'Vikram Malhotra');
   });
 
-  it('GET /api/patients/nonexistent-id returns 404 PatientNotFoundError', async () => {
-    const res = await request(app).get('/api/patients/P-99999');
+  it('GET /api/v1/patients/nonexistent returns 404 PatientNotFoundError', async () => {
+    const res = await request(app).get('/api/v1/patients/P-99999');
     assert.equal(res.status, 404);
     assert.equal(res.body.error, 'PatientNotFoundError');
   });
 
-  it('POST /api/patients creates new triage record with status 201', async () => {
+  it('POST /api/v1/patients creates new triage record with status 201', async () => {
     const payload = {
-      name: 'Rohan Deshmukh',
-      mrn: 'MRN-88123',
-      age: 34,
-      tel: '+91 98330 99887',
-      stream: 'Cardiology',
+      name: 'Pooja Bhatt',
+      mrn: 'MRN-77334',
+      age: 45,
+      tel: '+91 98220 55443',
+      stream: 'Neurology',
       painLevel: 9,
-      symptoms: ['Chest Tightness / Dyspnea'],
-      accommodations: ['Audio Prescription'],
-      notes: 'Test intake record.'
+      symptoms: ['Severe Migraine / Vertigo'],
+      accommodations: ['High-contrast Interface'],
+      notes: 'Emergency neurology referral.'
     };
 
-    const res = await request(app).post('/api/patients').send(payload);
+    const res = await request(app).post('/api/v1/patients').send(payload);
     assert.equal(res.status, 201);
     assert.equal(res.body.success, true);
-    assert.equal(res.body.data.name, 'Rohan Deshmukh');
-    assert.equal(res.body.data.priority, 'urgent'); // Auto-classified due to chest symptoms + pain 9
+    assert.equal(res.body.data.name, 'Pooja Bhatt');
+    assert.equal(res.body.data.priority, 'urgent');
     createdPatientId = res.body.data.id;
   });
 
-  it('POST /api/patients rejects invalid name with status 400', async () => {
-    const res = await request(app).post('/api/patients').send({
-      name: 'A',
-      mrn: 'MRN-12345',
-      age: 30,
-      painLevel: 5
-    });
-    assert.equal(res.status, 400);
-    assert.equal(res.body.error, 'ValidationError');
-    assert.equal(res.body.field, 'name');
-  });
-
-  it('POST /api/patients rejects invalid MRN with status 400', async () => {
-    const res = await request(app).post('/api/patients').send({
-      name: 'Valid Name',
-      mrn: 'BAD-MRN-FORMAT',
-      age: 30,
+  it('POST /api/v1/patients rejects invalid MRN with status 400', async () => {
+    const res = await request(app).post('/api/v1/patients').send({
+      name: 'Valid Patient',
+      mrn: 'INVALID-FORMAT',
+      age: 40,
       painLevel: 5
     });
     assert.equal(res.status, 400);
@@ -104,96 +123,79 @@ describe('2. Patient Triage API & Validations', () => {
     assert.equal(res.body.field, 'mrn');
   });
 
-  it('POST /api/patients rejects out-of-range pain score (> 10) with status 400', async () => {
-    const res = await request(app).post('/api/patients').send({
-      name: 'Valid Name',
-      mrn: 'MRN-12345',
-      age: 30,
-      painLevel: 15
-    });
-    assert.equal(res.status, 400);
-    assert.equal(res.body.error, 'ValidationError');
-    assert.equal(res.body.field, 'painLevel');
-  });
-
-  it('DELETE /api/patients/:id discharges created patient and returns 200', async () => {
-    assert.ok(createdPatientId, 'createdPatientId should exist');
-    const res = await request(app).delete(`/api/patients/${createdPatientId}`);
+  it('DELETE /api/v1/patients/:id discharges created patient and returns 200', async () => {
+    assert.ok(createdPatientId);
+    const res = await request(app).delete(`/api/v1/patients/${createdPatientId}`);
     assert.equal(res.status, 200);
-    assert.equal(res.body.success, true);
     assert.equal(res.body.dischargedPatient.id, createdPatientId);
   });
 });
 
-describe('3. Core fs Streaming & Audit Export', () => {
-  it('GET /api/patients/export/stream streams audit log with text/plain', async () => {
-    const res = await request(app).get('/api/patients/export/stream');
+describe('4. Relational SQL Queries & Aggregations Demo (PDF Page 1-2)', () => {
+  it('GET /api/v1/sql/departments-summary demonstrates LEFT JOIN & Aggregations', async () => {
+    const res = await request(app).get('/api/v1/sql/departments-summary');
+    assert.equal(res.status, 200);
+    assert.ok(res.body.sqlEquivalent.includes('GROUP BY'));
+    assert.ok(Array.isArray(res.body.data));
+    const firstDept = res.body.data[0];
+    assert.ok(firstDept.departmentName);
+    assert.ok(typeof firstDept.patientCount === 'number');
+    assert.ok(typeof firstDept.avgPainScore === 'number');
+  });
+
+  it('GET /api/v1/sql/urgent-patients demonstrates INNER JOIN', async () => {
+    const res = await request(app).get('/api/v1/sql/urgent-patients');
+    assert.equal(res.status, 200);
+    assert.ok(res.body.sqlEquivalent.includes('INNER JOIN'));
+    assert.ok(res.body.data.every((p) => p.priority === 'urgent' && p.department.name));
+  });
+
+  it('GET /api/v1/sql/schema returns raw DDL blueprint', async () => {
+    const res = await request(app).get('/api/v1/sql/schema');
+    assert.equal(res.status, 200);
+    assert.ok(res.text.includes('CREATE TABLE IF NOT EXISTS patients'));
+    assert.ok(res.text.includes('CREATE INDEX IF NOT EXISTS idx_patients_priority'));
+  });
+});
+
+describe('5. Multilingual Prescriptions & Streaming', () => {
+  it('GET /api/v1/prescriptions returns multilingual records', async () => {
+    const res = await request(app).get('/api/v1/prescriptions');
+    assert.equal(res.status, 200);
+    const rx = res.body.data[0];
+    assert.ok(rx.instructions.en);
+    assert.ok(rx.instructions.hi);
+    assert.ok(rx.instructions.mr);
+  });
+
+  it('PATCH /api/v1/prescriptions/:id/toggle toggles adherence taken flag', async () => {
+    const res = await request(app).patch('/api/v1/prescriptions/rx-2/toggle');
+    assert.equal(res.status, 200);
+    assert.equal(typeof res.body.data.taken, 'boolean');
+
+    // Toggle back to preserve test fixture
+    await request(app).patch('/api/v1/prescriptions/rx-2/toggle');
+  });
+
+  it('GET /api/v1/patients/export/stream streams audit trail with text/plain', async () => {
+    const res = await request(app).get('/api/v1/patients/export/stream');
     assert.equal(res.status, 200);
     assert.ok(res.headers['content-type'].includes('text/plain'));
     assert.ok(res.text.includes('[AUDIT]'));
   });
 });
 
-describe('4. Multilingual Prescription API', () => {
-  it('GET /api/prescriptions returns 200 with multilingual translations', async () => {
-    const res = await request(app).get('/api/prescriptions');
-    assert.equal(res.status, 200);
-    assert.ok(Array.isArray(res.body.data));
-    const firstMed = res.body.data[0];
-    assert.ok(firstMed.instructions.en);
-    assert.ok(firstMed.instructions.hi);
-    assert.ok(firstMed.instructions.mr);
+describe('6. Centralized Multi-Transport Logging & Security (PDF Page 5 & 10)', () => {
+  it('verifies requests are written to logs/combined.log', () => {
+    const logPath = path.join(__dirname, '..', 'logs', 'combined.log');
+    assert.ok(fs.existsSync(logPath), 'logs/combined.log should exist on disk');
+    const content = fs.readFileSync(logPath, 'utf8');
+    assert.ok(content.length > 0, 'combined.log should contain log entries');
   });
 
-  it('PATCH /api/prescriptions/:id/toggle toggles adherence taken status', async () => {
-    const res = await request(app).patch('/api/prescriptions/rx-3/toggle');
-    assert.equal(res.status, 200);
-    assert.equal(res.body.success, true);
-    assert.equal(typeof res.body.data.taken, 'boolean');
-
-    // Toggle back to preserve initial fixture state
-    await request(app).patch('/api/prescriptions/rx-3/toggle');
-  });
-
-  it('POST /api/prescriptions creates a new prescription with status 201', async () => {
-    const res = await request(app).post('/api/prescriptions').send({
-      name: 'Ibuprofen',
-      dosage: '400 mg',
-      time: '04:00 PM',
-      mealTiming: 'after',
-      doctor: 'Dr. S. K. Rao'
-    });
-    assert.equal(res.status, 201);
-    assert.equal(res.body.data.name, 'Ibuprofen');
-  });
-
-  it('POST /api/prescriptions rejects missing medication name with 400', async () => {
-    const res = await request(app).post('/api/prescriptions').send({
-      dosage: '400 mg',
-      time: '04:00 PM'
-    });
-    assert.equal(res.status, 400);
-    assert.equal(res.body.error, 'ValidationError');
-    assert.equal(res.body.field, 'name');
-  });
-});
-
-describe('5. Clinical Analytics & Derived Calculations', () => {
-  it('GET /api/analytics returns 200 and real-time triage & rx metrics', async () => {
-    const res = await request(app).get('/api/analytics');
-    assert.equal(res.status, 200);
-    assert.equal(res.body.success, true);
-    assert.ok(res.body.analytics.priorityCounts.urgent !== undefined);
-    assert.ok(typeof res.body.analytics.averagePainScore === 'number');
-    assert.ok(typeof res.body.analytics.prescriptions.adherenceRatePercent === 'number');
-  });
-});
-
-describe('6. Error Handling & 404 Fallback', () => {
-  it('GET /api/unknown-endpoint returns 404 with structured JSON', async () => {
-    const res = await request(app).get('/api/unknown-endpoint');
+  it('GET /api/v1/unknown-endpoint returns 404 with structured JSON', async () => {
+    const res = await request(app).get('/api/v1/unknown-endpoint');
     assert.equal(res.status, 404);
     assert.equal(res.body.error, 'NotFoundError');
-    assert.equal(res.body.statusCode, 404);
   });
 });

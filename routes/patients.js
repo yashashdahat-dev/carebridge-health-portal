@@ -1,14 +1,14 @@
 /**
- * CareBridge — Patient Triage Router
+ * CareBridge — Patient Triage Router (RESTful API Best Practices)
  * File: routes/patients.js
  * 
  * Demonstrates:
- * - Express Router (express.Router())
- * - Core fs/promises (readFile, writeFile)
- * - Core path module (path.join)
- * - Core fs streaming (fs.createReadStream().pipe(res))
- * - Route params (req.params.id) and query parameters (req.query)
- * - HTTP Status codes (200, 201, 400, 404, 500)
+ * - RESTful URI Versioning (/api/v1/patients) (PDF Page 3)
+ * - Server-side Pagination with metadata, X-Total-Count, and RFC 5988 Link headers (PDF Page 4)
+ * - Filtering by fields (?priority=urgent, ?stream=Cardiology, ?search=query)
+ * - Multi-field Sorting with '-' for descending (?sort=-painLevel,name) (PDF Page 4)
+ * - fs/promises async persistence and streaming
+ * - Clean HTTP Status codes (200, 201, 400, 404, 500)
  */
 
 import express from 'express';
@@ -24,25 +24,60 @@ const __dirname = path.dirname(__filename);
 const PATIENTS_FILE = path.join(__dirname, '..', 'data', 'patients.json');
 const AUDIT_LOG_FILE = path.join(__dirname, '..', 'data', 'audit.log');
 
-/**
- * Helper to read patients from disk
- */
 async function loadPatients() {
   const data = await readFile(PATIENTS_FILE, 'utf8');
   return JSON.parse(data);
 }
 
-/**
- * Helper to save patients to disk
- */
 async function savePatients(patients) {
   await writeFile(PATIENTS_FILE, JSON.stringify(patients, null, 2), 'utf8');
 }
 
 /**
- * GET /api/patients/export/stream
- * Streams the audit log directly to response using fs.createReadStream()
- * Memory efficient for large clinical export files (PDF Page 2 & 6).
+ * Builds RFC 5988 Link Header for paginated APIs (PDF Page 4)
+ */
+function buildLinkHeader(baseUrl, page, size, totalPages) {
+  const links = [];
+  links.push(`<${baseUrl}?page=${page}&size=${size}>; rel="self"`);
+  links.push(`<${baseUrl}?page=1&size=${size}>; rel="first"`);
+  if (page > 1) {
+    links.push(`<${baseUrl}?page=${page - 1}&size=${size}>; rel="prev"`);
+  }
+  if (page < totalPages) {
+    links.push(`<${baseUrl}?page=${page + 1}&size=${size}>; rel="next"`);
+  }
+  links.push(`<${baseUrl}?page=${totalPages}&size=${size}>; rel="last"`);
+  return links.join(', ');
+}
+
+/**
+ * Applies multi-field sorting based on sort query (?sort=-painLevel,name)
+ */
+function applySorting(records, sortQuery) {
+  if (!sortQuery) return records;
+  const sortFields = sortQuery.split(',').map((s) => s.trim());
+
+  return [...records].sort((a, b) => {
+    for (const field of sortFields) {
+      const isDesc = field.startsWith('-');
+      const prop = isDesc ? field.slice(1) : field;
+
+      let valA = a[prop];
+      let valB = b[prop];
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return isDesc ? 1 : -1;
+      if (valA > valB) return isDesc ? -1 : 1;
+    }
+    return 0;
+  });
+}
+
+/**
+ * GET /api/v1/patients/export/stream
+ * Streams clinical audit log using fs.createReadStream()
  */
 router.get('/export/stream', (req, res, next) => {
   if (!existsSync(AUDIT_LOG_FILE)) {
@@ -63,20 +98,30 @@ router.get('/export/stream', (req, res, next) => {
 });
 
 /**
- * GET /api/patients
- * Supports query parameters: ?priority=urgent and ?search=vikram
+ * GET /api/v1/patients
+ * Supports:
+ * - Filtering: ?priority=urgent, ?stream=Cardiology, ?search=vikram
+ * - Sorting: ?sort=-painLevel,name
+ * - Pagination: ?page=1&size=10
  */
 router.get('/', async (req, res, next) => {
   try {
     const patients = await loadPatients();
-    const { priority, search } = req.query;
+    let { priority, stream, search, sort, page, size } = req.query;
 
     let filtered = patients;
 
+    // 1. Filtering by Priority
     if (priority && priority !== 'all') {
       filtered = filtered.filter((p) => p.priority.toLowerCase() === priority.toLowerCase());
     }
 
+    // 2. Filtering by Clinical Stream / Department
+    if (stream && stream !== 'all') {
+      filtered = filtered.filter((p) => p.stream.toLowerCase() === stream.toLowerCase());
+    }
+
+    // 3. Free-text search
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
       filtered = filtered.filter(
@@ -88,11 +133,42 @@ router.get('/', async (req, res, next) => {
       );
     }
 
+    // 4. Multi-Field Sorting (PDF Page 4)
+    if (sort) {
+      filtered = applySorting(filtered, sort);
+    }
+
+    // 5. Server-Side Pagination (PDF Page 4)
+    const totalItems = filtered.length;
+    const pageNum = parseInt(page, 10) || 1;
+    const pageSize = parseInt(size, 10) || 10;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    const validPage = Math.min(Math.max(pageNum, 1), totalPages);
+
+    const startIndex = (validPage - 1) * pageSize;
+    const paginatedRecords = filtered.slice(startIndex, startIndex + pageSize);
+
+    // Set standard REST Pagination Headers (PDF Page 4)
+    res.setHeader('X-Total-Count', totalItems);
+    res.setHeader('X-Total-Pages', totalPages);
+    res.setHeader('X-Current-Page', validPage);
+    res.setHeader('X-Page-Size', pageSize);
+
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
+    res.setHeader('Link', buildLinkHeader(baseUrl, validPage, pageSize, totalPages));
+
     res.status(200).json({
       success: true,
-      count: filtered.length,
-      total: patients.length,
-      data: filtered
+      pagination: {
+        page: validPage,
+        size: pageSize,
+        totalItems,
+        totalPages,
+        hasNext: validPage < totalPages,
+        hasPrev: validPage > 1
+      },
+      count: paginatedRecords.length,
+      data: paginatedRecords
     });
   } catch (err) {
     next(err);
@@ -100,8 +176,7 @@ router.get('/', async (req, res, next) => {
 });
 
 /**
- * GET /api/patients/:id
- * Route parameter example (req.params.id)
+ * GET /api/v1/patients/:id
  */
 router.get('/:id', async (req, res, next) => {
   try {
@@ -112,7 +187,8 @@ router.get('/:id', async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: 'PatientNotFoundError',
-        message: `Patient with ID ${req.params.id} does not exist in active triage queue.`
+        message: `Patient with ID ${req.params.id} does not exist in active triage queue.`,
+        statusCode: 404
       });
     }
 
@@ -126,14 +202,13 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
- * POST /api/patients
+ * POST /api/v1/patients
  * Clinical triage intake with validation (HTTP 201 Created / 400 Bad Request)
  */
 router.post('/', async (req, res, next) => {
   try {
     const { name, mrn, age, tel, stream, painLevel, symptoms = [], accommodations = [], notes = '' } = req.body;
 
-    // Clinical Input Validations
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return res.status(400).json({
         success: false,
@@ -172,7 +247,6 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    // Determine ESI Priority Tier
     const criticalSymptoms = [
       'Chest Tightness / Dyspnea',
       'Severe Migraine / Vertigo',
@@ -216,8 +290,7 @@ router.post('/', async (req, res, next) => {
 });
 
 /**
- * DELETE /api/patients/:id
- * Discharge or complete patient treatment from active triage queue
+ * DELETE /api/v1/patients/:id
  */
 router.delete('/:id', async (req, res, next) => {
   try {

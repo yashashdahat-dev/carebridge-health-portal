@@ -1,6 +1,6 @@
 # CareBridge — Patient Triage & Multilingual Prescription Reader (Full-Stack Edition)
 
-A high-performance, accessible, full-stack clinical healthcare web portal designed as an authentic medical facility system. Built with **React 19**, **Vite**, **Context API**, **CSS Modules**, and a resilient **Node.js (v26 LTS) & Express Backend** utilizing core APIs (`node:fs/promises`, `node:path`, `node:process`, `node:http`), Helmet, CORS, and native streaming.
+A high-performance, accessible, full-stack clinical healthcare web portal designed as an authentic medical facility system. Built with **React 19**, **Vite**, **Context API**, **CSS Modules**, and a resilient **Node.js (v26 LTS) & Express Backend** featuring **Relational Database Design (PostgreSQL / MySQL)**, **ORM Models (Prisma & Sequelize)**, **NoSQL Schemas (MongoDB & Mongoose)**, **RESTful Best Practices (Versioning, RFC 5988 Pagination, Multi-field Sorting)**, and **Multi-Transport Centralized Logging**.
 
 ---
 
@@ -18,15 +18,23 @@ Healthcare/
 ├── package.json         # NPM manifest with scripts for Vite and Express (Node 26 LTS)
 ├── package-lock.json    # Deterministic lockfile with integrity hashes
 ├── .gitignore           # Excludes node_modules/, dist/, .env, and logs
-├── DEVELOPER.md         # Full In-Depth Guide (Node.js runtime, modules, HTTP, Express, Git, Tests)
+├── DEVELOPER.md         # Full In-Depth Guide (Node.js runtime, modules, HTTP, Express, SQL, ORM, NoSQL)
 ├── legacy-index.html    # Standalone static HTML5 portal (preserved for fallback reference)
 ├── legacy-app.js        # Standalone monolithic legacy client script (preserved for fallback)
 ├── styles.css           # Global design tokens, CSS variables, and typography scale
-├── routes/              # Modular Express Routers
-│   ├── patients.js      # Patient triage API (CRUD, query filters, fs streaming)
-│   ├── prescriptions.js # Multilingual prescription schedule API
+├── db/
+│   └── schema.sql       # PostgreSQL / MySQL DDL blueprint (tables, keys, indexes, joins, aggregations)
+├── prisma/
+│   └── schema.prisma    # Prisma ORM schema declaration with models, relations, and indexes
+├── models/
+│   ├── sequelizeModels.js # Sequelize ORM model definitions and relational associations
+│   └── mongooseModels.js  # Mongoose NoSQL document schemas, validators, virtuals, pre-save hooks
+├── routes/              # Modular Express Routers (RESTful Versioning)
+│   ├── patients.js      # Patient triage API (/api/v1/patients: pagination, sorting, filters, CRUD)
+│   ├── prescriptions.js # Multilingual prescription schedule API (/api/v1/prescriptions)
 │   ├── analytics.js     # Real-time ESI metrics and medication adherence aggregation
-│   └── health.js        # Node runtime diagnostics (process.uptime, memoryUsage, versions)
+│   ├── health.js        # Node runtime diagnostics (process.uptime, memoryUsage, versions)
+│   └── sqlDemo.js       # Relational SQL join and aggregation endpoints (/api/v1/sql)
 ├── middleware/          # Custom Express Middleware
 │   ├── logger.js        # Request logger with HIPAA/PHI redaction & timing
 │   └── errorHandler.js  # 4-argument centralized error handler
@@ -34,6 +42,9 @@ Healthcare/
 │   ├── patients.json    # Clinical patient triage records
 │   ├── prescriptions.json # Multilingual prescription regimens (EN, HI, MR)
 │   └── audit.log        # Clinical audit trail for fs.createReadStream demo
+├── logs/                # Centralized Logging Output
+│   ├── combined.log     # Formatted HTTP & application logs
+│   └── error.log        # Dedicated error diagnostics with stack traces
 ├── tests/               # Automated Unit & Integration Test Suites (36 Assertions)
 │   ├── error-handling.test.js # Client-side error classes & clinical validation (18 tests)
 │   └── server.test.js         # Backend Express API & supertest integration (18 tests)
@@ -79,59 +90,81 @@ Healthcare/
 
 ---
 
-## 1. Node.js & Express Backend Architecture
+## 1. Relational Database Design, SQL & ORM/NoSQL
 
-The backend provides a production-grade clinical API powered by **Node.js (v26 LTS)** and **Express.js**:
+### 1.1 Relational Database Schema (`db/schema.sql`)
+- **Entities**: `departments`, `patients`, `symptoms`, `patient_symptoms` (many-to-many junction), `prescriptions`, and `audit_logs`.
+- **Referential Integrity**: Primary keys, Foreign keys with `ON DELETE CASCADE` and `ON UPDATE CASCADE`.
+- **Performance Indexes**: Explicit B-tree indexes on `patients(priority)`, `patients(mrn)`, `patients(created_at DESC)`, and `prescriptions(patient_id)`.
+- **SQL Queries Demonstrated**:
+  - `SELECT`, `INSERT`, `UPDATE`, `DELETE`
+  - `INNER JOIN`: Patients joined with their clinical departments.
+  - `LEFT JOIN` & Aggregations: `COUNT(p.id) AS patient_count`, `ROUND(AVG(p.pain_level), 1) AS avg_pain_score`, `MIN`, `MAX` grouped by department.
 
-### Endpoints Directory
+### 1.2 ORM Architecture: Prisma & Sequelize
+- **Prisma ([`prisma/schema.prisma`](prisma/schema.prisma))**: Declarative schema declaring `Department`, `Patient`, `Prescription`, `@relation` references, and auto-generated type-safe queries.
+- **Sequelize ([`models/sequelizeModels.js`](models/sequelizeModels.js))**: JavaScript programmatic models using `sequelize.define()`, validation rules, and relational associations (`hasMany`, `belongsTo`).
+
+### 1.3 NoSQL Architecture: MongoDB & Mongoose ([`models/mongooseModels.js`](models/mongooseModels.js))
+- Document-oriented collection schemas using `new Schema()` and `model()`.
+- Built-in validators (required, min/max bounds, regex matching for MRN).
+- Pre-save middleware hook (MRN normalization, automatic priority elevation for pain >= 8).
+- Computed virtual properties (`isEmergency` derived property).
+
+---
+
+## 2. RESTful API Best Practices
+
+CareBridge strictly adheres to modern RESTful architecture:
+
+1. **URI Versioning (`/api/v1/*`)**:
+   - `/api/v1/patients`
+   - `/api/v1/prescriptions`
+   - `/api/v1/analytics`
+   - `/api/v1/health`
+   - `/api/v1/sql`
+2. **Server-Side Pagination**:
+   - Query parameters: `?page=1&size=10`.
+   - Returns RFC 5988 compliant `Link` header:
+     `<...page=1&size=10>; rel="self", <...page=1&size=10>; rel="first", <...page=2&size=10>; rel="next", <...page=3&size=10>; rel="last"`.
+   - Headers: `X-Total-Count`, `X-Total-Pages`, `X-Current-Page`.
+3. **Filtering & Multi-Field Sorting**:
+   - Filter by status/priority: `?priority=urgent`
+   - Filter by department: `?stream=Cardiology`
+   - Free-text search: `?search=malhotra`
+   - Multi-field sorting: `?sort=-painLevel,name` (prefix `-` for descending, standard for ascending).
+4. **Centralized Multi-Transport Logging & Error Handling**:
+   - Structured logging with levels (`INFO`, `WARN`, `ERROR`).
+   - Output dispatched to Console + `logs/combined.log` + `logs/error.log`.
+   - HIPAA/PHI automatic sanitization.
+   - Centralized 4-argument Express error middleware `(err, req, res, next)`.
+
+---
+
+## 3. Endpoints Directory
+
 | Method | Endpoint | Description | Status Codes |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | System health, uptime, memory usage, Node/V8 versions | `200` |
-| `GET` | `/api/patients` | Retrieve active triage queue (`?priority=urgent`, `?search=query`) | `200` |
-| `POST` | `/api/patients` | Register new triage patient with ESI priority classification | `201`, `400` |
-| `GET` | `/api/patients/:id` | Fetch specific patient record by ID | `200`, `404` |
-| `DELETE` | `/api/patients/:id` | Complete/discharge patient from active queue | `200`, `404` |
-| `GET` | `/api/patients/export/stream` | Stream clinical audit log via `fs.createReadStream().pipe(res)` | `200`, `404` |
-| `GET` | `/api/prescriptions` | Retrieve multilingual prescription schedule (`en`, `hi`, `mr`) | `200` |
-| `POST` | `/api/prescriptions` | Add new prescription regimen with dosage and timing validation | `201`, `400` |
-| `PATCH` | `/api/prescriptions/:id/toggle` | Toggle taken adherence status with timestamp logging | `200`, `404` |
-| `GET` | `/api/analytics` | Aggregated triage priority counts, average pain, and adherence % | `200` |
-
-### Core Node.js Features Demonstrated
-1. **`fs` / `fs/promises`**: Asynchronous JSON persistence (`readFile`, `writeFile` in `data/patients.json` and `data/prescriptions.json`) and streaming file I/O (`createReadStream` for audit logs).
-2. **`path`**: OS-independent file path resolution (`path.join(__dirname, ...)`).
-3. **`process`**: Environment variables (`process.env.PORT`, `process.env.NODE_ENV`), CLI arguments (`process.argv`), runtime metrics (`process.memoryUsage()`, `process.uptime()`), and signal listeners (`SIGINT`, `SIGTERM`) for graceful server shutdown.
-4. **Native Raw HTTP Server (`raw-server.js`)**: Implements `http.createServer()` handling requests, headers (`writeHead`, `setHeader`), file streaming, status codes, and `clientError` socket events without frameworks.
-5. **Security Middleware**: `helmet` for security headers, `cors` for cross-origin access, and HIPAA-compliant request logging redacting PHI query strings.
-6. **Error-Handling Middleware**: Centralized 4-argument `(err, req, res, next)` error handler returning structured JSON responses.
+| `GET` | `/api/v1/health` | System health, uptime, memory usage, Node v26 / V8 versions | `200` |
+| `GET` | `/api/v1/patients` | Paginated queue with filters (`?page=1&size=10&sort=-painLevel`) | `200` |
+| `POST` | `/api/v1/patients` | Register new triage patient with ESI classification | `201`, `400` |
+| `GET` | `/api/v1/patients/:id` | Fetch specific patient record by ID | `200`, `404` |
+| `DELETE` | `/api/v1/patients/:id` | Discharge patient from active triage queue | `200`, `404` |
+| `GET` | `/api/v1/patients/export/stream` | Stream audit log via `fs.createReadStream().pipe(res)` | `200`, `404` |
+| `GET` | `/api/v1/prescriptions` | Multilingual prescription schedule (`en`, `hi`, `mr`) | `200` |
+| `POST` | `/api/v1/prescriptions` | Add new prescription regimen with dosage and timing validation | `201`, `400` |
+| `PATCH` | `/api/v1/prescriptions/:id/toggle` | Toggle taken adherence status with timestamp logging | `200`, `404` |
+| `GET` | `/api/v1/analytics` | Aggregated triage priority counts, average pain, and adherence % | `200` |
+| `GET` | `/api/v1/sql/departments-summary` | Relational LEFT JOIN & SQL Aggregations demo | `200` |
+| `GET` | `/api/v1/sql/urgent-patients` | Relational INNER JOIN demo | `200` |
+| `GET` | `/api/v1/sql/schema` | Raw PostgreSQL / MySQL DDL blueprint | `200` |
 
 ---
 
-## 2. React Context API & State Management
-
-- **`CareBridgeContext`**: Centralized provider for UI themes (`light`, `dark`, `high-contrast`), text scaling (`sm`, `md`, `lg`, `xl`), multilingual voice language (`en`, `hi`, `mr`), live screen reader announcements (`aria-live`), and pure reducer dispatches.
-- **Prop Drilling vs Context**: Context handles cross-cutting concerns (theme, language, audio), while Props handle shallow parent-to-child data delegation (`PatientQueue` -> `PatientCard`, `PrescriptionList` -> `PrescriptionCard`).
-- **5 State Management Patterns**:
-  1. *Local State* (`useState`): Form inputs, filter tabs, active searches.
-  2. *Lifting State Up*: Queue filter state lifted to `App.jsx`.
-  3. *Context State* (`useContext`): Accessibility tokens and live audio speech.
-  4. *Derived State* (`useMemo`): Filtered lists, priority counts, average pain score, and adherence rate computed on render without redundant memory state.
-  5. *Reducer State* (`useReducer`): Pure transition functions (`patientReducer`, `prescriptionReducer`) handling atomic clinical updates.
-
----
-
-## 3. Styling Systems: CSS Modules, Tailwind CSS & Styled-components
-
-- **Primary Clinical Styling**: Scoped **CSS Modules** (`*.module.css`) for all production components with build-time hashed classes, zero text overlap, and complete theme token compatibility.
-- **Isolated Tailwind CSS Showcase**: [`src/examples/TailwindShowcase.jsx`](src/examples/TailwindShowcase.jsx) demonstrating utility-first styling for an appointment card without altering the core app.
-- **Isolated styled-components Showcase**: [`src/examples/StyledComponentsShowcase.jsx`](src/examples/StyledComponentsShowcase.jsx) demonstrating CSS-in-JS with dynamic `$priority` and `$variant` props.
-
----
-
-## Running the Application Locally
+## 4. Running the Application Locally
 
 ```bash
-# 1. Install all dependencies (React, Vite, Express, Helmet, Cors, Supertest)
+# 1. Install all dependencies
 npm install
 
 # 2. Run automated tests (Client + Server: 36 assertions across 10 suites)
@@ -151,4 +184,4 @@ npm run build
 npm run server:raw
 ```
 
-Open `http://localhost:3000` for the React clinical portal or `http://localhost:5000/api/health` for the Node.js backend diagnostics.
+Open `http://localhost:3000` for the React clinical portal or `http://localhost:5000/api` for the full backend API directory.

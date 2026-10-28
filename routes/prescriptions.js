@@ -1,12 +1,11 @@
 /**
- * CareBridge — Multilingual Prescription Router
+ * CareBridge — Multilingual Prescription Router (RESTful API Best Practices)
  * File: routes/prescriptions.js
  * 
  * Demonstrates:
- * - Express Router
- * - Core fs/promises for data persistence
- * - Async handlers with try/catch and next(err)
- * - Multilingual JSON response payload (en, hi, mr)
+ * - RESTful URI Versioning (/api/v1/prescriptions)
+ * - Server-side pagination & sorting
+ * - Multilingual schema response
  */
 
 import express from 'express';
@@ -30,16 +29,59 @@ async function savePrescriptions(prescriptions) {
 }
 
 /**
- * GET /api/prescriptions
- * Returns all active prescriptions with adherence status and multilingual instructions
+ * GET /api/v1/prescriptions
+ * Supports ?taken=true/false and ?sort=name,-time
  */
 router.get('/', async (req, res, next) => {
   try {
     const prescriptions = await loadPrescriptions();
+    let { taken, sort, page, size } = req.query;
+
+    let filtered = prescriptions;
+
+    if (taken !== undefined) {
+      const isTaken = taken === 'true';
+      filtered = filtered.filter((rx) => rx.taken === isTaken);
+    }
+
+    if (sort) {
+      const sortFields = sort.split(',').map((s) => s.trim());
+      filtered = [...filtered].sort((a, b) => {
+        for (const field of sortFields) {
+          const isDesc = field.startsWith('-');
+          const prop = isDesc ? field.slice(1) : field;
+          let valA = a[prop];
+          let valB = b[prop];
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return isDesc ? 1 : -1;
+          if (valA > valB) return isDesc ? -1 : 1;
+        }
+        return 0;
+      });
+    }
+
+    const totalItems = filtered.length;
+    const pageNum = parseInt(page, 10) || 1;
+    const pageSize = parseInt(size, 10) || 10;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    const validPage = Math.min(Math.max(pageNum, 1), totalPages);
+
+    const startIndex = (validPage - 1) * pageSize;
+    const paginated = filtered.slice(startIndex, startIndex + pageSize);
+
+    res.setHeader('X-Total-Count', totalItems);
+
     res.status(200).json({
       success: true,
-      count: prescriptions.length,
-      data: prescriptions
+      pagination: {
+        page: validPage,
+        size: pageSize,
+        totalItems,
+        totalPages
+      },
+      count: paginated.length,
+      data: paginated
     });
   } catch (err) {
     next(err);
@@ -47,8 +89,7 @@ router.get('/', async (req, res, next) => {
 });
 
 /**
- * POST /api/prescriptions
- * Registers a new medication regimen with validation
+ * POST /api/v1/prescriptions
  */
 router.post('/', async (req, res, next) => {
   try {
@@ -117,8 +158,7 @@ router.post('/', async (req, res, next) => {
 });
 
 /**
- * PATCH /api/prescriptions/:id/toggle
- * Toggles adherence taken status and records timestamp
+ * PATCH /api/v1/prescriptions/:id/toggle
  */
 router.patch('/:id/toggle', async (req, res, next) => {
   try {

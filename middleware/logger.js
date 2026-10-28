@@ -3,15 +3,16 @@
  * File: middleware/logger.js
  * 
  * Demonstrates:
- * - Custom Express middleware (req, res, next)
- * - Response time tracking
+ * - Express request logger middleware (req, res, next)
+ * - Integration with multi-transport centralized logger (PDF Page 5)
  * - Safe logging with HIPAA/PHI redaction
  */
+
+import logger, { redactPHI } from '../utils/logger.js';
 
 export function clinicalLogger(req, res, next) {
   const start = Date.now();
 
-  // Log on response completion
   res.on('finish', () => {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
@@ -21,15 +22,20 @@ export function clinicalLogger(req, res, next) {
     // PHI redaction: sanitize sensitive query strings if present
     const sanitizedUrl = url.replace(/(tel|phone|mrn|name)=[^&]+/gi, '$1=[REDACTED]');
 
-    // Status category coloring / logging
-    const logMessage = `[${new Date().toISOString()}] ${method} ${sanitizedUrl} -> ${statusCode} (${duration}ms)`;
-    
+    const meta = {
+      ip: req.ip || req.socket.remoteAddress,
+      userAgent: req.get('user-agent'),
+      durationMs: duration
+    };
+
+    const message = `${method} ${sanitizedUrl} -> ${statusCode} (${duration}ms)`;
+
     if (statusCode >= 500) {
-      console.error(`\x1b[31m[ERROR]\x1b[0m ${logMessage}`);
+      logger.error(message, meta);
     } else if (statusCode >= 400) {
-      console.warn(`\x1b[33m[WARN]\x1b[0m ${logMessage}`);
+      logger.warn(message, meta);
     } else {
-      console.log(`\x1b[32m[INFO]\x1b[0m ${logMessage}`);
+      logger.info(message, meta);
     }
   });
 
