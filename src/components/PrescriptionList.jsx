@@ -1,14 +1,13 @@
 /**
  * CareBridge — PrescriptionList Component
  * File: src/components/PrescriptionList.jsx
- * 
- * Component composition holding the prescriptions grid,
- * speech audio triggers, and the MedicationForm.
+ * Styled via CSS Modules: PrescriptionList.module.css
  */
 
 import React from 'react';
 import { PrescriptionCard } from './PrescriptionCard.jsx';
 import { MedicationForm } from './MedicationForm.jsx';
+import styles from './PrescriptionList.module.css';
 
 export function PrescriptionList({
   prescriptions = [],
@@ -18,22 +17,32 @@ export function PrescriptionList({
   onAnnounce
 }) {
   return (
-    <section id="prescriptions-section" className="prescriptions-portal-section" aria-labelledby="rx-heading">
-      <div className="section-header-row">
+    <section id="prescriptions-section" className={styles.prescriptionsSection} aria-labelledby="rx-heading">
+      <div className={styles.sectionHeaderRow}>
         <div>
-          <h2 id="rx-heading" className="section-title">
+          <h2 id="rx-heading" className={styles.sectionTitle}>
             Multilingual Prescription Schedule &amp; Reader
           </h2>
-          <p className="section-subtitle">
+          <p className={styles.sectionSubtitle}>
             Synchronized patient prescriptions with audio speech synthesis and adherence tracking
           </p>
         </div>
-        <div className="rx-quick-tools">
+        <div>
           <button
             type="button"
             className="btn btn-outline-primary"
             onClick={onReadAllPrescriptions}
             aria-label="Read all scheduled medications aloud"
+            style={{
+              padding: '0.5rem 1rem',
+              fontWeight: 700,
+              fontSize: '0.8125rem',
+              borderRadius: '6px',
+              border: '1px solid var(--primary-600, #0284c7)',
+              background: '#f0f9ff',
+              color: 'var(--primary-700, #0369a1)',
+              cursor: 'pointer'
+            }}
           >
             🔊 Read All Regimens Aloud
           </button>
@@ -41,9 +50,9 @@ export function PrescriptionList({
       </div>
 
       {/* Grid of Prescription Cards */}
-      <div className="prescriptions-grid">
+      <div className={styles.prescriptionsGrid}>
         {prescriptions.length === 0 ? (
-          <div className="empty-rx-state" role="status">
+          <div className={styles.emptyState} role="status">
             <p>No active medications scheduled for this patient.</p>
           </div>
         ) : (
@@ -65,4 +74,3 @@ export function PrescriptionList({
     </section>
   );
 }
-

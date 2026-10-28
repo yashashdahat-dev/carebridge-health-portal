@@ -1,0 +1,48 @@
+/* PrescriptionList.module.css - Scoped styles */
+
+.prescriptionsSection {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  font-family: var(--font-heading, inherit);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-heading, #0f172a);
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #64748b);
+  margin: 0.2rem 0 0 0;
+}
+
+.prescriptionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--text-muted, #64748b);
+  background-color: var(--slate-50, #f8fafc);
+  border-radius: 8px;
+}

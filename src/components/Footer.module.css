@@ -1,0 +1,80 @@
+/* Footer.module.css - Scoped styles */
+
+.appFooter {
+  background-color: var(--slate-900, #0f172a);
+  color: #94a3b8;
+  margin-top: 3.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8125rem;
+}
+
+.footerTopContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.footerBrandSummary h3 {
+  font-family: var(--font-heading, inherit);
+  color: #f8fafc;
+  font-size: 1.125rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.footerComplianceList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.complianceBadge {
+  display: inline-block;
+  background-color: rgba(2, 132, 199, 0.25);
+  color: #7dd3fc;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.emergencyDisclaimer {
+  background-color: rgba(220, 38, 38, 0.15);
+  border-left: 3px solid #ef4444;
+  padding: 0.65rem 0.875rem;
+  border-radius: 4px;
+  color: #fca5a5;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.footerBottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.25rem 1.5rem;
+}
+
+.footerBottomContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: #10b981;
+  margin-right: 0.4rem;
+}

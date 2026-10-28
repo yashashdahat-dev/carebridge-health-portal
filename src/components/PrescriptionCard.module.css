@@ -1,0 +1,148 @@
+/* PrescriptionCard.module.css - Scoped styles */
+
+.prescriptionCard {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  transition: all 0.15s ease;
+  border-top: 4px solid var(--primary-600, #0284c7);
+}
+
+.prescriptionTaken {
+  opacity: 0.85;
+  background-color: #f8fafc;
+  border-top-color: #10b981;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.medCategoryBadge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  margin-bottom: 0.35rem;
+}
+
+.medName {
+  font-family: var(--font-heading, inherit);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-heading, #0f172a);
+  margin: 0;
+}
+
+.medDosage {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #64748b);
+  font-weight: 500;
+}
+
+.takenCheckboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.takenStatusPill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.pillTaken {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.pillPending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.scheduleRow {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-body, #334155);
+}
+
+.cautionBanner {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.instructionsBlock {
+  background-color: var(--slate-50, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 0.875rem;
+}
+
+.instructionsHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.instructionsLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+}
+
+.btnSpeechCard {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0284c7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnSpeechCard:hover {
+  background-color: #0284c7;
+  color: #ffffff;
+}
+
+.btnSpeechCard.speaking {
+  background-color: #dc2626;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.instructionsBodyText {
+  font-size: 0.875rem;
+  color: var(--text-heading, #1e293b);
+  line-height: 1.5;
+  margin: 0;
+}

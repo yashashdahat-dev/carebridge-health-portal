@@ -1,13 +1,12 @@
 /**
  * CareBridge — AccessibilityToolbar Component
  * File: src/components/AccessibilityToolbar.jsx
- * 
- * Provides theme selection, text scaling, dyslexia wide-spacing,
- * multilingual switching, and global speech playback controls.
+ * Styled via CSS Modules: AccessibilityToolbar.module.css
  */
 
 import React from 'react';
 import { useCareBridge } from '../context/CareBridgeContext.jsx';
+import styles from './AccessibilityToolbar.module.css';
 
 export function AccessibilityToolbar({ onReadAllPrescriptions }) {
   const {
@@ -65,13 +64,13 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
   };
 
   return (
-    <div className="accessibility-toolbar" role="region" aria-label="Accessibility and Language Settings">
-      <div className="toolbar-container">
+    <div className={styles.accessibilityToolbar} role="region" aria-label="Accessibility and Language Settings">
+      <div className={styles.toolbarContainer}>
         
         {/* Contrast & Theme Switching */}
-        <div className="toolbar-group" role="group" aria-labelledby="theme-label">
-          <span id="theme-label" className="toolbar-label">
-            <svg className="icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <div className={styles.toolbarGroup} role="group" aria-labelledby="theme-label">
+          <span id="theme-label" className={styles.toolbarLabel}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
               <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -84,10 +83,10 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </svg>
             Theme:
           </span>
-          <div className="button-group" role="radiogroup" aria-labelledby="theme-label">
+          <div className={styles.buttonGroup} role="radiogroup" aria-labelledby="theme-label">
             <button
               type="button"
-              className={`btn-tool ${theme === 'light' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${theme === 'light' ? styles.active : ''}`}
               role="radio"
               aria-checked={theme === 'light'}
               onClick={() => handleThemeChange('light')}
@@ -96,7 +95,7 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </button>
             <button
               type="button"
-              className={`btn-tool ${theme === 'dark' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${theme === 'dark' ? styles.active : ''}`}
               role="radio"
               aria-checked={theme === 'dark'}
               onClick={() => handleThemeChange('dark')}
@@ -105,7 +104,7 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </button>
             <button
               type="button"
-              className={`btn-tool ${theme === 'high-contrast' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${theme === 'high-contrast' ? styles.active : ''}`}
               role="radio"
               aria-checked={theme === 'high-contrast'}
               onClick={() => handleThemeChange('high-contrast')}
@@ -116,19 +115,19 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
         </div>
 
         {/* Text Size Scaling */}
-        <div className="toolbar-group" role="group" aria-labelledby="fontsize-label">
-          <span id="fontsize-label" className="toolbar-label">
-            <svg className="icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <div className={styles.toolbarGroup} role="group" aria-labelledby="fontsize-label">
+          <span id="fontsize-label" className={styles.toolbarLabel}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="4 7 4 4 20 4 20 7"></polyline>
               <line x1="9" y1="20" x2="15" y2="20"></line>
               <line x1="12" y1="4" x2="12" y2="20"></line>
             </svg>
             Text Size:
           </span>
-          <div className="button-group">
+          <div className={styles.buttonGroup}>
             <button
               type="button"
-              className={`btn-tool ${fontScale === 'sm' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${fontScale === 'sm' ? styles.active : ''}`}
               onClick={handleFontDecrease}
               aria-label="Decrease text size (A minus)"
             >
@@ -136,7 +135,7 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </button>
             <button
               type="button"
-              className={`btn-tool ${fontScale === 'md' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${fontScale === 'md' ? styles.active : ''}`}
               onClick={handleFontReset}
               aria-label="Default text size (100 percent)"
             >
@@ -144,7 +143,7 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </button>
             <button
               type="button"
-              className={`btn-tool ${fontScale === 'lg' || fontScale === 'xl' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${fontScale === 'lg' || fontScale === 'xl' ? styles.active : ''}`}
               onClick={handleFontIncrease}
               aria-label="Increase text size (A plus)"
             >
@@ -154,14 +153,14 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
         </div>
 
         {/* Dyslexia / Wide Spacing Toggle */}
-        <div className="toolbar-group">
+        <div className={styles.toolbarGroup}>
           <button
             type="button"
-            className={`btn-tool btn-toggle ${isWideSpacing ? 'active' : ''}`}
+            className={`${styles.btnTool} ${styles.btnToggle} ${isWideSpacing ? styles.active : ''}`}
             aria-pressed={isWideSpacing}
             onClick={handleWideSpacingToggle}
           >
-            <svg className="icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <polyline points="6 8 2 12 6 16"></polyline>
               <polyline points="18 8 22 12 18 16"></polyline>
@@ -171,19 +170,19 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
         </div>
 
         {/* Multilingual Language Selector */}
-        <div className="toolbar-group" role="group" aria-labelledby="lang-label">
-          <span id="lang-label" className="toolbar-label">
-            <svg className="icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <div className={styles.toolbarGroup} role="group" aria-labelledby="lang-label">
+          <span id="lang-label" className={styles.toolbarLabel}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
             Language:
           </span>
-          <div className="button-group" role="radiogroup" aria-labelledby="lang-label">
+          <div className={styles.buttonGroup} role="radiogroup" aria-labelledby="lang-label">
             <button
               type="button"
-              className={`btn-tool ${language === 'en' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${language === 'en' ? styles.active : ''}`}
               role="radio"
               aria-checked={language === 'en'}
               onClick={() => handleLanguageChange('en')}
@@ -192,7 +191,7 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </button>
             <button
               type="button"
-              className={`btn-tool ${language === 'hi' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${language === 'hi' ? styles.active : ''}`}
               role="radio"
               aria-checked={language === 'hi'}
               onClick={() => handleLanguageChange('hi')}
@@ -201,7 +200,7 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
             </button>
             <button
               type="button"
-              className={`btn-tool ${language === 'mr' ? 'active' : ''}`}
+              className={`${styles.btnTool} ${language === 'mr' ? styles.active : ''}`}
               role="radio"
               aria-checked={language === 'mr'}
               onClick={() => handleLanguageChange('mr')}
@@ -212,15 +211,15 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
         </div>
 
         {/* Web Speech Audio Controls */}
-        <div className="toolbar-group speech-controls-group">
+        <div className={`${styles.toolbarGroup} ${styles.speechGroup}`}>
           {isGlobalSpeaking ? (
             <button
               type="button"
-              className="btn-tool btn-speech btn-speech-stop"
+              className={`${styles.btnTool} ${styles.btnSpeech} ${styles.btnSpeechStop}`}
               onClick={stopAllSpeech}
-              aria-label="Stop current audio reading"
+              aria-label="Stop audio reading"
             >
-              <svg className="icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="6" y="6" width="12" height="12"></rect>
               </svg>
               <span>Stop Audio</span>
@@ -228,11 +227,11 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
           ) : (
             <button
               type="button"
-              className="btn-tool btn-speech"
+              className={`${styles.btnTool} ${styles.btnSpeech}`}
               onClick={onReadAllPrescriptions}
-              aria-label="Read all active prescription instructions aloud"
+              aria-label="Read all scheduled medications aloud"
             >
-              <svg className="icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
               </svg>
@@ -245,4 +244,3 @@ export function AccessibilityToolbar({ onReadAllPrescriptions }) {
     </div>
   );
 }
-

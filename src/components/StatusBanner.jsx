@@ -1,19 +1,26 @@
 /**
  * CareBridge — StatusBanner Component
  * File: src/components/StatusBanner.jsx
- * 
- * Provides visible and screen-reader accessible live notifications (WCAG AAA).
+ * Styled via CSS Modules: StatusBanner.module.css
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCareBridge } from '../context/CareBridgeContext.jsx';
+import styles from './StatusBanner.module.css';
 
 export function StatusBanner() {
   const { announcement, isGlobalSpeaking, stopAllSpeech } = useCareBridge();
 
+  const statusTypeClass = announcement?.type === 'success'
+    ? styles.statusSuccess
+    : announcement?.type === 'warning'
+      ? styles.statusWarning
+      : announcement?.type === 'error'
+        ? styles.statusError
+        : styles.statusInfo;
+
   return (
     <>
-      {/* Global Accessible Live Region for Screen Readers */}
       <div
         id="live-announcer"
         className="sr-only"
@@ -23,22 +30,30 @@ export function StatusBanner() {
         {announcement?.message}
       </div>
 
-      {/* Visible Active Speech Status Banner */}
       {isGlobalSpeaking && (
         <aside
-          className="speech-status-banner"
+          className={styles.speechStatusBanner}
           role="region"
           aria-label="Active Text-to-Speech Playback"
         >
-          <div className="banner-container">
-            <span className="speech-pulse-indicator" aria-hidden="true"></span>
-            <span className="speech-reading-message">
-              Audio Reading Active: Screen reader voice is synthesizing clinical instructions.
-            </span>
+          <div className={styles.bannerContainer}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className={styles.speechPulseIndicator} aria-hidden="true"></span>
+              <span>Audio Reading Active: Synthesizing clinical instructions.</span>
+            </div>
             <button
               type="button"
-              className="btn btn-sm btn-outline-danger"
               onClick={stopAllSpeech}
+              style={{
+                background: '#dc2626',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
               aria-label="Stop audio reading"
             >
               Stop Audio
@@ -47,20 +62,18 @@ export function StatusBanner() {
         </aside>
       )}
 
-      {/* Visual Clinical Alert Status Bar */}
       {announcement?.message && (
         <div
-          className={`status-banner status-${announcement.type || 'info'}`}
+          className={`${styles.statusBanner} ${statusTypeClass}`}
           role="status"
           aria-live="polite"
         >
-          <div className="status-banner-content">
-            <span className={`status-indicator-dot dot-${announcement.type || 'info'}`} aria-hidden="true"></span>
-            <span className="status-text">{announcement.message}</span>
+          <div className={styles.statusBannerContent}>
+            <span className={styles.statusIndicatorDot} aria-hidden="true"></span>
+            <span>{announcement.message}</span>
           </div>
         </div>
       )}
     </>
   );
 }
-

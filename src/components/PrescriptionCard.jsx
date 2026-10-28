@@ -1,15 +1,12 @@
 /**
  * CareBridge — PrescriptionCard Component
  * File: src/components/PrescriptionCard.jsx
- * 
- * Demonstrates:
- * - Multilingual rendering (English, Hindi, Marathi) via CareBridgeContext
- * - Web Speech API text-to-speech integration
- * - Interactive medication completion toggle
+ * Styled via CSS Modules: PrescriptionCard.module.css
  */
 
 import React from 'react';
 import { useCareBridge } from '../context/CareBridgeContext.jsx';
+import styles from './PrescriptionCard.module.css';
 
 export function PrescriptionCard({ prescription, onToggleTaken }) {
   const { language, activeSpeechId, speak, stopAllSpeech } = useCareBridge();
@@ -21,7 +18,6 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
     time,
     slot,
     purpose,
-    categoryTag,
     taken,
     doctor,
     caution,
@@ -30,7 +26,6 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
     translatedCategories = {}
   } = prescription;
 
-  // Localized strings based on active language in context
   const displayName = translatedNames[language] || name;
   const displayCategory = translatedCategories[language] || purpose;
   const displayInstruction = instructions[language] || instructions.en || 'Take as clinically directed by physician.';
@@ -48,75 +43,71 @@ export function PrescriptionCard({ prescription, onToggleTaken }) {
 
   return (
     <article
-      className={`prescription-card ${taken ? 'prescription-taken' : 'prescription-pending'}`}
+      className={`${styles.prescriptionCard} ${taken ? styles.prescriptionTaken : ''}`}
       aria-labelledby={`med-heading-${id}`}
       tabIndex="0"
     >
-      <div className="prescription-card-header">
+      <div className={styles.cardHeader}>
         <div>
-          <span className={`med-category-badge ${categoryTag || 'tag-general'}`}>
+          <span className={styles.medCategoryBadge}>
             {displayCategory}
           </span>
-          <h3 id={`med-heading-${id}`} className="med-name">
+          <h3 id={`med-heading-${id}`} className={styles.medName}>
             {displayName}
           </h3>
-          <span className="med-dosage-text">{dosage}</span>
+          <span className={styles.medDosage}>{dosage}</span>
         </div>
 
-        <div className="prescription-status-toggle">
-          <label className="taken-checkbox-label">
+        <div className={styles.takenCheckboxLabel}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={taken}
               onChange={() => onToggleTaken(id)}
               aria-label={`Mark ${name} as ${taken ? 'pending' : 'taken'}`}
             />
-            <span className={`taken-status-pill ${taken ? 'pill-taken' : 'pill-pending'}`}>
-              {taken ? '✓ Dose Taken' : '○ Pending Dose'}
+            <span className={`${styles.takenStatusPill} ${taken ? styles.pillTaken : styles.pillPending}`}>
+              {taken ? '✓ Taken' : '○ Pending'}
             </span>
           </label>
         </div>
       </div>
 
-      <div className="med-schedule-row">
-        <div className="schedule-item">
-          <span className="schedule-label">Intake Time:</span>
-          <time className="schedule-time">{time}</time>
-          <span className="schedule-slot">({slot || 'Scheduled'})</span>
+      <div className={styles.scheduleRow}>
+        <div>
+          <strong>Intake Time:</strong> <time>{time}</time> <span>({slot || 'Scheduled'})</span>
         </div>
         {doctor && (
-          <div className="schedule-item doctor-item">
-            <span className="schedule-label">Prescribing Clinician:</span>
-            <span className="doctor-name">{doctor}</span>
+          <div>
+            <strong>Doctor:</strong> <span>{doctor}</span>
           </div>
         )}
       </div>
 
       {caution && (
-        <div className="med-caution-banner" role="note">
-          <span className="caution-icon" aria-hidden="true">⚠️</span>
-          <span><strong>Clinical Caution:</strong> {caution}</span>
+        <div className={styles.cautionBanner} role="note">
+          <span aria-hidden="true">⚠️</span>
+          <span><strong>Caution:</strong> {caution}</span>
         </div>
       )}
 
       {/* Multilingual Directions */}
-      <div className="med-instructions-block">
-        <div className="instructions-header-row">
-          <span className="instructions-label">
+      <div className={styles.instructionsBlock}>
+        <div className={styles.instructionsHeaderRow}>
+          <span className={styles.instructionsLabel}>
             Patient Directions ({language === 'hi' ? 'हिन्दी' : language === 'mr' ? 'मराठी' : 'English'}):
           </span>
           <button
             type="button"
-            className={`btn-speech-card ${isSpeakingThis ? 'speaking' : ''}`}
+            className={`${styles.btnSpeechCard} ${isSpeakingThis ? styles.speaking : ''}`}
             onClick={handleSpeak}
-            aria-label={`Listen to audio directions for ${name} in ${language}`}
+            aria-label={`Listen to directions for ${name}`}
           >
-            <span aria-hidden="true">{isSpeakingThis ? '⏹ Stop' : '🔊 Listen'}</span>
+            {isSpeakingThis ? '⏹ Stop' : '🔊 Listen'}
           </button>
         </div>
-        <p className="instructions-body-text">{displayInstruction}</p>
+        <p className={styles.instructionsBodyText}>{displayInstruction}</p>
       </div>
     </article>
   );
 }
-

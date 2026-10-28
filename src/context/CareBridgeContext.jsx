@@ -1,36 +1,47 @@
 /**
- * CareBridge — Application-Wide Context Provider
+ * CareBridge — Global Context Provider
  * File: src/context/CareBridgeContext.jsx
  * 
- * Provides accessibility settings (theme, fontScale, wideSpacing, language),
- * screen reader live region announcements, and Web Speech API orchestration.
+ * Provides:
+ * - Reducer-driven state management for patients (patientReducer)
+ * - Reducer-driven state management for prescriptions (prescriptionReducer)
+ * - Accessibility preferences via useLocalStorage (theme, scale, language, wide spacing)
+ * - Live announcements (aria-live) and Web Speech API orchestration
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
+import { patientReducer, prescriptionReducer, PATIENT_ACTIONS, RX_ACTIONS } from './reducers.js';
+import { INITIAL_PATIENT_QUEUE, INITIAL_PRESCRIPTIONS } from '../data/initialData.js';
 import { speakClinicalText, stopSpeech as cancelSpeech } from '../utils/speech.js';
 
 const CareBridgeContext = createContext(null);
 
 export function CareBridgeProvider({ children }) {
-  // Accessibility Preferences persisted in localStorage with useLocalStorage hook
+  // 1. Accessibility Preferences persisted with useLocalStorage custom hook
   const [theme, setTheme] = useLocalStorage('carebridge_theme', 'light');
   const [fontScale, setFontScale] = useLocalStorage('carebridge_font_scale', 'md');
   const [isWideSpacing, setIsWideSpacing] = useLocalStorage('carebridge_wide_spacing', false);
   const [language, setLanguage] = useLocalStorage('carebridge_language', 'en');
 
-  // Status and Announcement Banner State
-  const [announcement, setAnnouncement] = useState({
-    message: 'System Ready. Clinical Portal operational.',
-    type: 'success',
-    id: Date.now()
-  });
+  // 2. Persistent storage backers for patients & prescriptions
+  const [storedPatients, setStoredPatients] = useLocalStorage('carebridge_triage_records', INITIAL_PATIENT_QUEUE);
+  const [storedPrescriptions, setStoredPrescriptions] = useLocalStorage('carebridge_prescriptions', INITIAL_PRESCRIPTIONS);
 
-  // Audio Speech Playback Tracking State
-  const [activeSpeechId, setActiveSpeechId] = useState(null);
-  const [isGlobalSpeaking, setIsGlobalSpeaking] = useState(false);
+  // 3. Reducer-based State Management
+  const [patientQueue, dispatchPatients] = useReducer(patientReducer, storedPatients);
+  const [prescriptions, dispatchPrescriptions] = useReducer(prescriptionReducer, storedPrescriptions);
 
-  // Sync HTML root attributes with preferences
+  // Synchronize reducers with localStorage on changes
+  useEffect(() => {
+    setStoredPatients(patientQueue);
+  }, [patientQueue, setStoredPatients]);
+
+  useEffect(() => {
+    setStoredPrescriptions(prescriptions);
+  }, [prescriptions, setStoredPrescriptions]);
+
+  // Synchronize root HTML attributes for dynamic theme and text scaling
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-theme', theme);
@@ -42,7 +53,13 @@ export function CareBridgeProvider({ children }) {
     }
   }, [theme, fontScale, isWideSpacing]);
 
-  // Announce messages to screen reader and status banner
+  // 4. Live Announcements State
+  const [announcement, setAnnouncement] = useState({
+    message: 'System Ready. Clinical Portal operational.',
+    type: 'success',
+    id: Date.now()
+  });
+
   const announce = useCallback((message, type = 'info') => {
     setAnnouncement({
       message,
@@ -51,7 +68,10 @@ export function CareBridgeProvider({ children }) {
     });
   }, []);
 
-  // Web Speech API speak function
+  // 5. Web Speech API Playback State
+  const [activeSpeechId, setActiveSpeechId] = useState(null);
+  const [isGlobalSpeaking, setIsGlobalSpeaking] = useState(false);
+
   const speak = useCallback((text, lang = language, itemId = null) => {
     setActiveSpeechId(itemId);
     setIsGlobalSpeaking(true);
@@ -60,7 +80,7 @@ export function CareBridgeProvider({ children }) {
       text,
       lang,
       onStart: () => {
-        announce(`Reading aloud: ${text.substring(0, 60)}...`, 'info');
+        announce(`Reading aloud: ${text.substring(0, 50)}...`, 'info');
       },
       onEnd: () => {
         setActiveSpeechId(null);
@@ -69,12 +89,11 @@ export function CareBridgeProvider({ children }) {
       onError: () => {
         setActiveSpeechId(null);
         setIsGlobalSpeaking(false);
-        announce('Audio playback was interrupted or unavailable.', 'warning');
+        announce('Audio synthesis interrupted.', 'warning');
       }
     });
   }, [language, announce]);
 
-  // Stop any active speech
   const stopAllSpeech = useCallback(() => {
     cancelSpeech(() => {
       setActiveSpeechId(null);
@@ -83,7 +102,37 @@ export function CareBridgeProvider({ children }) {
     });
   }, [announce]);
 
+  // 6. Action Dispatch Helpers
+  const addPatient = useCallback((patient) => {
+    dispatchPatients({ type: PATIENT_ACTIONS.ADD_PATIENT, payload: patient });
+  }, []);
+
+  const completePatient = useCallback((patientId) => {
+    const target = patientQueue.find((p) => p.id === patientId);
+    dispatchPatients({ type: PATIENT_ACTIONS.COMPLETE_PATIENT, payload: patientId });
+    if (target) {
+      announce(`Consultation complete for ${target.name}. Patient discharged from queue.`, 'success');
+    }
+  }, [patientQueue, announce]);
+
+  const addPrescription = useCallback((prescription) => {
+    dispatchPrescriptions({ type: RX_ACTIONS.ADD_PRESCRIPTION, payload: prescription });
+  }, []);
+
+  const toggleMedicationTaken = useCallback((medId) => {
+    dispatchPrescriptions({ type: RX_ACTIONS.TOGGLE_TAKEN, payload: medId });
+    const target = prescriptions.find((m) => m.id === medId);
+    if (target) {
+      const nextTaken = !target.taken;
+      announce(
+        `Medication "${target.name}" marked as ${nextTaken ? 'Taken ✓' : 'Pending Dose ○'}.`,
+        nextTaken ? 'success' : 'info'
+      );
+    }
+  }, [prescriptions, announce]);
+
   const value = {
+    // Accessibility Preferences
     theme,
     setTheme,
     fontScale,
@@ -92,6 +141,18 @@ export function CareBridgeProvider({ children }) {
     setIsWideSpacing,
     language,
     setLanguage,
+
+    // Patient State & Actions (Reducer)
+    patientQueue,
+    addPatient,
+    completePatient,
+
+    // Prescription State & Actions (Reducer)
+    prescriptions,
+    addPrescription,
+    toggleMedicationTaken,
+
+    // Speech & Announcements
     announcement,
     announce,
     activeSpeechId,
@@ -114,4 +175,3 @@ export function useCareBridge() {
   }
   return context;
 }
-

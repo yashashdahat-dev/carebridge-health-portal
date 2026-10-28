@@ -1,20 +1,17 @@
 /**
- * CareBridge — Root Application Component
+ * CareBridge — Main Application Root Component
  * File: src/App.jsx
  * 
  * Demonstrates:
- * - Lifting State Up (Shared patientQueue and prescriptions)
- * - useMemo (Derived filtered queue, priority counts, average pain score, adherence stats)
- * - useCallback (Optimized event handlers for patient & medication updates)
- * - useContext (Consumed via useCareBridge)
- * - useLocalStorage (Custom hook for persistence)
- * - Component Composition (Header, DashboardSummary, PatientTriageForm, PatientQueue, PrescriptionList, Footer)
+ * - Context API (CareBridgeContext for shared global state & reducer actions)
+ * - Prop Drilling (Parent-to-child data & callbacks passed to PatientQueue, PatientCard, PrescriptionList)
+ * - useMemo for derived state (filtered queue, priority counts, average pain, adherence)
+ * - useCallback for optimized event handlers
+ * - CSS Modules scoped layout (App.module.css)
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { useLocalStorage } from './hooks/useLocalStorage.js';
 import { useCareBridge } from './context/CareBridgeContext.jsx';
-import { INITIAL_PATIENT_QUEUE, INITIAL_PRESCRIPTIONS } from './data/initialData.js';
 import {
   calculatePriorityCounts,
   calculateAveragePainScore,
@@ -31,29 +28,35 @@ import { PatientQueue } from './components/PatientQueue.jsx';
 import { PrescriptionList } from './components/PrescriptionList.jsx';
 import { Footer } from './components/Footer.jsx';
 
+import styles from './App.module.css';
+
 export function CareBridgeApp() {
-  const { announce, speak, language } = useCareBridge();
+  const {
+    patientQueue,
+    addPatient,
+    completePatient,
+    prescriptions,
+    addPrescription,
+    toggleMedicationTaken,
+    announce,
+    speak,
+    language
+  } = useCareBridge();
 
-  // 1. Shared State Lifted Up: Patient Queue & Prescriptions (Persisted via custom hook)
-  const [patientQueue, setPatientQueue] = useLocalStorage('carebridge_triage_records', INITIAL_PATIENT_QUEUE);
-  const [prescriptions, setPrescriptions] = useLocalStorage('carebridge_prescriptions', INITIAL_PRESCRIPTIONS);
-
-  // 2. Queue UI Filter & Search State
+  // Local state for queue UI filtering and search (Local State Pattern)
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // ---------------------------------------------------------------------------
-  // 3. useMemo DERIVED METRICS & FILTERED DATA
+  // DERIVED STATE PATTERN (useMemo)
   // ---------------------------------------------------------------------------
 
-  // Filtered queue based on active priority tab and text search
+  // 1. Filtered patient queue derived from source queue, filter, and search
   const filteredQueue = useMemo(() => {
     return patientQueue.filter((patient) => {
-      // 1. Filter by priority tier
       if (activeFilter !== 'all' && patient.priority !== activeFilter) {
         return false;
       }
-      // 2. Filter by search query
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       const matchName = patient.name.toLowerCase().includes(q);
@@ -65,82 +68,41 @@ export function CareBridgeApp() {
     });
   }, [patientQueue, activeFilter, searchQuery]);
 
-  // Derived priority counts: urgent, priority, routine
+  // 2. Priority counts derived via reduce()
   const priorityCounts = useMemo(() => {
     return calculatePriorityCounts(patientQueue);
   }, [patientQueue]);
 
-  // Derived mean pain score across all waiting patients
+  // 3. Average pain level derived via reduce()
   const averagePain = useMemo(() => {
     return calculateAveragePainScore(patientQueue);
   }, [patientQueue]);
 
-  // Derived medication adherence rate
+  // 4. Medication adherence percentage derived via reduce()
   const adherenceStats = useMemo(() => {
     return calculateAdherenceStats(prescriptions);
   }, [prescriptions]);
 
-  // Derived boolean: are any urgent patients currently waiting?
+  // 5. Critical urgency flag derived via some()
   const hasUrgent = useMemo(() => {
     return hasUrgentPatients(patientQueue);
   }, [patientQueue]);
 
-  // Derived boolean: are all daily doses completed?
+  // 6. Complete adherence flag derived via every()
   const allMedsCompleted = useMemo(() => {
     return areAllMedicationsCompleted(prescriptions);
   }, [prescriptions]);
 
   // ---------------------------------------------------------------------------
-  // 4. useCallback EVENT HANDLERS (Stable function references)
+  // CALLBACK EVENT HANDLERS (useCallback)
   // ---------------------------------------------------------------------------
 
-  // Add newly registered patient
-  const handleAddPatient = useCallback((newPatient) => {
-    setPatientQueue((prev) => [newPatient, ...prev]);
-  }, [setPatientQueue]);
-
-  // Discharge / complete patient
-  const handleCompletePatient = useCallback((patientId) => {
-    setPatientQueue((prev) => {
-      const target = prev.find((p) => p.id === patientId);
-      const updated = prev.filter((p) => p.id !== patientId);
-      if (target) {
-        announce(`Consultation complete for ${target.name}. Patient discharged from queue.`, 'success');
-      }
-      return updated;
-    });
-  }, [setPatientQueue, announce]);
-
-  // Audio announce patient call
   const handleCallPatient = useCallback((patient) => {
-    const text = `Attention: Patient ${patient.name}, Medical Record ${patient.mrn}, please proceed to ${patient.stream} Consultation Room 1.`;
+    const text = `Attention: Patient ${patient.name}, Medical Record ${patient.mrn}, please report to ${patient.stream} Consultation Room 1.`;
     speak(text, 'en', patient.id);
     announce(`Paging patient ${patient.name} to Consultation Room 1.`, 'info');
   }, [speak, announce]);
 
-  // Toggle medication taken state
-  const handleToggleMedication = useCallback((medId) => {
-    setPrescriptions((prev) => {
-      return prev.map((med) => {
-        if (med.id === medId) {
-          const nextTaken = !med.taken;
-          announce(
-            `Medication "${med.name}" marked as ${nextTaken ? 'Taken ✓' : 'Pending Dose ○'}.`,
-            nextTaken ? 'success' : 'info'
-          );
-          return { ...med, taken: nextTaken };
-        }
-        return med;
-      });
-    });
-  }, [setPrescriptions, announce]);
-
-  // Add newly scheduled medication
-  const handleAddPrescription = useCallback((newMed) => {
-    setPrescriptions((prev) => [...prev, newMed]);
-  }, [setPrescriptions]);
-
-  // Read all scheduled prescriptions aloud
   const handleReadAllPrescriptions = useCallback(() => {
     if (!prescriptions.length) {
       announce('No scheduled medications to read aloud.', 'info');
@@ -150,7 +112,7 @@ export function CareBridgeApp() {
     const lines = prescriptions.map((med, idx) => {
       const name = med.translatedNames?.[language] || med.name;
       const inst = med.instructions?.[language] || med.instructions?.en || '';
-      return `Medication ${idx + 1}: ${name}. ${med.dosage}. Intake time: ${med.time}. Directions: ${inst}.`;
+      return `Medication ${idx + 1}: ${name}. ${med.dosage}. Scheduled time: ${med.time}. Directions: ${inst}.`;
     });
 
     const fullSpeech = `Daily Prescription Regimen. Total ${prescriptions.length} medications scheduled. ` + lines.join(' Next medication: ');
@@ -158,24 +120,24 @@ export function CareBridgeApp() {
   }, [prescriptions, language, speak, announce]);
 
   return (
-    <div className="carebridge-app-root">
+    <div className={styles.carebridgeAppRoot}>
       
       {/* Keyboard Accessible Skip Link */}
-      <a href="#main-content" className="skip-link">
+      <a href="#main-content" className={styles.skipLink}>
         Skip to main clinical content
       </a>
 
-      {/* Screen Reader & Visual Status Banner */}
+      {/* Screen Reader Live Region & Active Audio Bar */}
       <StatusBanner />
 
-      {/* App Header with Toolbar and Navigation */}
+      {/* Header Landmark */}
       <Header onReadAllPrescriptions={handleReadAllPrescriptions} />
 
       {/* Main Clinical Content Landmark */}
-      <main id="main-content" className="app-main-content">
-        <div className="main-content-container">
+      <main id="main-content" className={styles.appMainContent}>
+        <div className={styles.mainContentContainer}>
 
-          {/* 1. Clinical Dashboard Metrics Summary */}
+          {/* 1. Clinical Dashboard Summary (Prop Drilling derived metrics) */}
           <DashboardSummary
             queueCount={patientQueue.length}
             urgentCount={priorityCounts.urgent || 0}
@@ -187,15 +149,16 @@ export function CareBridgeApp() {
           />
 
           {/* 2. Two-Column Clinical Intake & Queue View */}
-          <div className="portal-two-column-layout">
-            <div className="column-triage-form">
+          <div className={styles.portalTwoColumnLayout}>
+            <div className={styles.columnTriageForm}>
               <PatientTriageForm
-                onAddPatient={handleAddPatient}
+                onAddPatient={addPatient}
                 onAnnounce={announce}
               />
             </div>
             
-            <div className="column-patient-queue">
+            <div className={styles.columnPatientQueue}>
+              {/* Prop Drilling Example: Queue passes callbacks and list down */}
               <PatientQueue
                 patients={filteredQueue}
                 activeFilter={activeFilter}
@@ -203,7 +166,7 @@ export function CareBridgeApp() {
                 onFilterChange={setActiveFilter}
                 onSearchChange={setSearchQuery}
                 onCallPatient={handleCallPatient}
-                onCompletePatient={handleCompletePatient}
+                onCompletePatient={completePatient}
               />
             </div>
           </div>
@@ -211,8 +174,8 @@ export function CareBridgeApp() {
           {/* 3. Prescription Schedule & Multilingual Reader */}
           <PrescriptionList
             prescriptions={prescriptions}
-            onToggleTaken={handleToggleMedication}
-            onAddPrescription={handleAddPrescription}
+            onToggleTaken={toggleMedicationTaken}
+            onAddPrescription={addPrescription}
             onReadAllPrescriptions={handleReadAllPrescriptions}
             onAnnounce={announce}
           />
@@ -230,4 +193,3 @@ export function CareBridgeApp() {
 export default function App() {
   return <CareBridgeApp />;
 }
-

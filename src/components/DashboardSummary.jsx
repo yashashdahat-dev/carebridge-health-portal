@@ -1,12 +1,11 @@
 /**
  * CareBridge — DashboardSummary Component
  * File: src/components/DashboardSummary.jsx
- * 
- * Clinical analytics dashboard showing patient counts, priority distribution,
- * average pain scores, and medication adherence progress index.
+ * Styled via CSS Modules: DashboardSummary.module.css
  */
 
 import React from 'react';
+import styles from './DashboardSummary.module.css';
 
 export function DashboardSummary({
   queueCount,
@@ -18,20 +17,20 @@ export function DashboardSummary({
   allMedsCompleted
 }) {
   return (
-    <section id="analytics-section" className="dashboard-summary-section" aria-label="Clinical Metrics Summary">
+    <section id="analytics-section" className={styles.dashboardSummarySection} aria-label="Clinical Metrics Summary">
       
-      {/* Dynamic Emergency Alert Banner (Shown when urgent cases are waiting) */}
+      {/* Dynamic Emergency Alert Banner */}
       {hasUrgent && (
-        <div className="emergency-alert-banner alert-critical" role="alert" aria-live="assertive">
-          <div className="alert-banner-content">
-            <span className="alert-icon-wrap" aria-hidden="true">
+        <div className={styles.emergencyAlertBanner} role="alert" aria-live="assertive">
+          <div className={styles.alertBannerContent}>
+            <span className={styles.alertIconWrap} aria-hidden="true">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </span>
-            <div className="alert-text">
+            <div>
               <strong>CRITICAL CLINICAL ADVISORY:</strong> {urgentCount} Tier-1 Urgent patient(s) waiting in queue. Immediate physician evaluation required.
             </div>
           </div>
@@ -40,77 +39,83 @@ export function DashboardSummary({
 
       {/* 100% Adherence Completion Banner */}
       {allMedsCompleted && (
-        <div className="all-completed-banner alert-success" role="status" aria-live="polite">
-          <span className="check-icon" aria-hidden="true">✓</span>
+        <div className={styles.allCompletedBanner} role="status" aria-live="polite">
+          <span aria-hidden="true">✓</span>
           <span><strong>100% Adherence Achieved:</strong> All scheduled daily doses have been marked as taken!</span>
         </div>
       )}
 
-      {/* Grid of Clinical Metric Cards */}
-      <div className="metrics-grid">
+      {/* Metrics Grid */}
+      <div className={styles.metricsGrid}>
         
         {/* Metric 1: Active Waiting Queue */}
-        <div className="metric-card card-queue">
-          <div className="metric-header">
-            <span className="metric-label">Active Waiting Queue</span>
-            <span className="metric-icon" aria-hidden="true">👥</span>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <span className={styles.metricLabel}>Active Waiting Queue</span>
+            <span className={styles.metricIcon} aria-hidden="true">👥</span>
           </div>
-          <div className="metric-body">
-            <span className="metric-value">{queueCount}</span>
-            <span className="metric-unit">Patients Admitted</span>
+          <div className={styles.metricBody}>
+            <span className={styles.metricValue}>{queueCount}</span>
+            <span className={styles.metricUnit}>Patients Admitted</span>
           </div>
-          <div className="metric-footer">
-            <div className="tier-pills-row">
-              <span className="tier-pill pill-emergency">{priorityCounts.urgent || 0} Urgent</span>
-              <span className="tier-pill pill-urgent">{priorityCounts.priority || 0} Priority</span>
-              <span className="tier-pill pill-standard">{priorityCounts.routine || 0} Routine</span>
+          <div className={styles.metricFooter}>
+            <div className={styles.tierPillsRow}>
+              <span className={`${styles.tierPill} ${styles.pillEmergency}`}>{priorityCounts.urgent || 0} Urgent</span>
+              <span className={`${styles.tierPill} ${styles.pillUrgent}`}>{priorityCounts.priority || 0} Priority</span>
+              <span className={`${styles.tierPill} ${styles.pillStandard}`}>{priorityCounts.routine || 0} Routine</span>
             </div>
           </div>
         </div>
 
         {/* Metric 2: Emergency Triage Cases */}
-        <div className={`metric-card card-urgent ${urgentCount > 0 ? 'card-has-urgent' : ''}`}>
-          <div className="metric-header">
-            <span className="metric-label">Urgent (Tier 1) Cases</span>
-            <span className="metric-icon" aria-hidden="true">🚨</span>
+        <div className={`${styles.metricCard} ${urgentCount > 0 ? styles.cardHasUrgent : ''}`}>
+          <div className={styles.metricHeader}>
+            <span className={styles.metricLabel}>Urgent (Tier 1) Cases</span>
+            <span className={styles.metricIcon} aria-hidden="true">🚨</span>
           </div>
-          <div className="metric-body">
-            <span className="metric-value metric-urgent-val">{urgentCount}</span>
-            <span className="metric-unit">Immediate Attention</span>
+          <div className={styles.metricBody}>
+            <span className={`${styles.metricValue} ${styles.metricUrgentVal}`}>{urgentCount}</span>
+            <span className={styles.metricUnit}>Immediate Evaluation</span>
           </div>
-          <div className="metric-footer">
-            <span className="metric-subtext">Critical symptom / severe pain</span>
+          <div className={styles.metricFooter}>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
+              Critical symptoms / severe pain
+            </span>
           </div>
         </div>
 
         {/* Metric 3: Average Pain Score */}
-        <div className="metric-card card-pain">
-          <div className="metric-header">
-            <span className="metric-label">Mean Patient Pain</span>
-            <span className="metric-icon" aria-hidden="true">📊</span>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <span className={styles.metricLabel}>Mean Patient Pain</span>
+            <span className={styles.metricIcon} aria-hidden="true">📊</span>
           </div>
-          <div className="metric-body">
-            <span className="metric-value">{averagePain}</span>
-            <span className="metric-unit">Scale: 1 – 10</span>
+          <div className={styles.metricBody}>
+            <span className={styles.metricValue}>{averagePain}</span>
+            <span className={styles.metricUnit}>Scale: 1 – 10</span>
           </div>
-          <div className="metric-footer">
-            <span className="metric-subtext">Clinical visual-analog index</span>
+          <div className={styles.metricFooter}>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
+              Clinical visual-analog index
+            </span>
           </div>
         </div>
 
         {/* Metric 4: Daily Adherence Index */}
-        <div className="metric-card card-adherence">
-          <div className="metric-header">
-            <span className="metric-label">Dose Adherence Rate</span>
-            <span className="metric-icon" aria-hidden="true">💊</span>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <span className={styles.metricLabel}>Dose Adherence Rate</span>
+            <span className={styles.metricIcon} aria-hidden="true">💊</span>
           </div>
-          <div className="metric-body">
-            <div className="adherence-stat-row">
-              <span className="metric-value">{adherenceStats.percentage}%</span>
-              <span className="metric-ratio">({adherenceStats.takenCount}/{adherenceStats.totalCount} Doses)</span>
+          <div className={styles.metricBody}>
+            <div className={styles.adherenceStatRow}>
+              <span className={styles.metricValue}>{adherenceStats.percentage}%</span>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
+                ({adherenceStats.takenCount}/{adherenceStats.totalCount} Doses)
+              </span>
             </div>
             <progress
-              className="adherence-progress-bar"
+              className={styles.adherenceProgressBar}
               value={adherenceStats.percentage}
               max="100"
               aria-label={`Daily medication adherence: ${adherenceStats.percentage} percent`}
@@ -118,8 +123,8 @@ export function DashboardSummary({
               {adherenceStats.percentage}%
             </progress>
           </div>
-          <div className="metric-footer">
-            <span className="metric-subtext">
+          <div className={styles.metricFooter}>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
               {allMedsCompleted ? 'All doses taken today' : `${adherenceStats.totalCount - adherenceStats.takenCount} dose(s) pending`}
             </span>
           </div>
@@ -129,4 +134,3 @@ export function DashboardSummary({
     </section>
   );
 }
-

@@ -13,6 +13,8 @@ This guide is intended for clinical portal developers and contributors. In adher
 6. [Resolving Merge Conflicts](#6-resolving-merge-conflicts)
 7. [JavaScript Error Handling Architecture](#7-javascript-error-handling-architecture)
 8. [Comprehensive Verification & Testing Runbook](#8-comprehensive-verification--testing-runbook)
+9. [React State Management Patterns & Context API](#9-react-state-management-patterns--context-api)
+10. [Styling Architecture: CSS Modules, Tailwind CSS & Styled-components](#10-styling-architecture-css-modules-tailwind-css--styled-components)
 
 ---
 
@@ -35,31 +37,37 @@ NPM (Node Package Manager) coordinates libraries, build tools, and scripts for N
 | `npm ci` | Clean/Deterministic Install | Installs exact dependencies directly from `package-lock.json` (ideal for CI/CD pipelines). |
 
 ### `package.json` vs `package-lock.json`
-- **`package.json`**: Human-readable configuration holding project metadata, script hooks, and semantic version ranges (e.g., `^14.2.4`).
+- **`package.json`**: Human-readable configuration holding project metadata, script hooks, and semantic version ranges (e.g., `^19.3.1`).
 - **`package-lock.json`**: Automatically generated snapshot containing exact dependency versions, sub-dependencies, and cryptographic sha512 integrity hashes. Ensures consistent builds across all developer machines.
 - **Dependencies vs. DevDependencies**:
-  - `dependencies`: Libraries required for application execution at runtime.
-  - `devDependencies`: Tools only needed during local development, testing, or linting (e.g., `serve`).
+  - `dependencies`: Libraries required for application execution at runtime (e.g., `react`, `react-dom`, `styled-components`).
+  - `devDependencies`: Tools only needed during local development, testing, or building (e.g., `vite`, `@vitejs/plugin-react`, `serve`).
 
 ---
 
 ## 2. Project Configuration & Scripts
 
-CareBridge uses native ES Modules (`"type": "module"` in `package.json`), allowing standard `<script type="module" src="js/main.js"></script>` execution in browsers without bundlers like Webpack or Vite.
+CareBridge uses native ES Modules (`"type": "module"` in `package.json`) combined with **Vite** for near-instant Hot Module Replacement (HMR) and optimized production builds.
 
 ### Available Scripts in `package.json`
 ```bash
-# Start local static development server at http://localhost:3000
+# Start Vite development server with Hot Module Replacement at http://localhost:3000
 npm run dev
 
-# Alternative command to start the server
+# Standard start command alias (runs Vite)
 npm start
 
 # Run comprehensive JavaScript syntax verification & automated unit tests
 npm test
 
-# Run dependency security audit
-npm run audit
+# Build production bundle into dist/ directory
+npm run build
+
+# Preview production build locally
+npm run preview
+
+# Serve legacy standalone static HTML5 version for backward compatibility
+npm run serve:legacy
 ```
 
 ---
@@ -98,13 +106,8 @@ git config --global user.email "your.email@example.com"
 
 ### Step 3.4: Link Local Repo and Push
 ```bash
-# Verify active branch is main
+git remote add origin https://github.com/<username>/carebridge-health-portal.git
 git branch -M main
-
-# Add remote origin (replace <your-username> with your actual GitHub username)
-git remote add origin https://github.com/<your-username>/carebridge-health-portal.git
-
-# Push initial code to GitHub
 git push -u origin main
 ```
 
@@ -112,109 +115,46 @@ git push -u origin main
 
 ## 4. Branching and Merging Workflow
 
-Never commit experimental features directly to `main`. Use structured feature branches:
-
-- **`main`**: Production-ready, verified clinical release branch.
-- **`feature/project-setup`**: Project metadata, NPM configs, `.gitignore`, and documentation.
-- **`feature/error-handling`**: Custom error hierarchy, storage limits, and API boundary resilience.
-
-```
-(main) ─────────●───────────────────────────────────────● (Release v1.0.0)
-                 \                                     /
-(feature/...)     ●───────●───────● (Pull Request) ───/
-```
-
-### Git Command Sequence for Feature Branches:
-```bash
-# 1. Switch to main and pull latest changes
-git checkout main
-git pull origin main
-
-# 2. Create and switch to feature branch
-git checkout -b feature/error-handling
-
-# 3. Check modified files
-git status
-
-# 4. Stage and commit changes with descriptive message
-git add js/errors.js js/clinical.js tests/error-handling.test.js
-git commit -m "feat(errors): implement custom error hierarchy and unit assertions"
-
-# 5. Push feature branch to GitHub
-git push -u origin feature/error-handling
-```
+1. Always branch off `main` for new features or bug fixes:
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/context-state-styling
+   ```
+2. Commit changes frequently with conventional commit messages:
+   ```bash
+   git commit -m "feat(context): implement CareBridgeContext and reducer state machines"
+   ```
+3. Push branch to remote:
+   ```bash
+   git push -u origin feature/context-state-styling
+   ```
 
 ---
 
 ## 5. Pull Request (PR) Standard & Review Checklist
 
-When work on a feature branch is ready:
-
-1. Open your repository on GitHub.
-2. Click **Compare & pull request** next to `feature/error-handling`.
-3. Fill out the PR template:
-
-```markdown
-### PR Title: feat(errors): implement domain error classes & async try/catch/finally
-
-#### Summary:
-- Adds custom `CareBridgeError`, `ValidationError`, `ApiError`, and `StorageError` classes.
-- Hardens `localStorage` operations with quota handling and corrupt JSON fallback.
-- Adds clinical input validation (MRN, age 0-125, pain scale 1-10).
-- Guarantees button loading state resets using `finally` blocks.
-- Adds 18 automated unit tests passing under `npm test`.
-
-#### Clinical Safety & Verification Checklist:
-- [x] Zero Patient Health Information (PHI) leaked to console logs.
-- [x] Screen reader announcements updated via `aria-live="polite"`.
-- [x] Loading spinners and disabled buttons cleanly reset on errors.
-- [x] Automated tests verified via `npm test`.
-```
-
-4. Assign a reviewer.
-5. Once approved, select **Squash and merge** or **Merge pull request**.
-6. Delete the remote branch on GitHub, then switch to `main` locally:
-```bash
-git checkout main
-git pull origin main
-git branch -d feature/error-handling
-```
+Before creating a Pull Request, verify:
+- [x] `npm test` passes with 18 assertions.
+- [x] `npm run build` succeeds with 0 errors.
+- [x] No syllabus jargon or developer commands exist inside `index.html`.
+- [x] All CSS Modules are properly scoped and preserve theme switching.
 
 ---
 
 ## 6. Resolving Merge Conflicts
 
-If another developer pushed changes to the same file:
-```bash
-git checkout main
-git pull origin main
-git checkout feature/error-handling
-git merge main
-```
-If Git reports `CONFLICT (content): Merge conflict in js/main.js`:
-1. Open the file in VS Code.
-2. Locate the conflict markers:
-   ```javascript
-   <<<<<<< HEAD (Current Change)
-   announce('Patient admitted', 'info');
-   =======
-   announceStatus('Patient registered', 'success');
-   >>>>>>> main (Incoming Change)
-   ```
-3. Edit the code to the desired combined version, removing all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
-4. Stage and commit the resolved files:
-   ```bash
-   git add js/main.js
-   git commit -m "fix(merge): resolve conflict between feature/error-handling and main"
-   git push origin feature/error-handling
-   ```
+If git reports merge conflicts:
+1. Run `git status` to see conflicting files.
+2. Open files and inspect conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
+3. Resolve manually, save, stage (`git add <file>`), and commit.
 
 ---
 
 ## 7. JavaScript Error Handling Architecture
 
 ### Custom Error Class Hierarchy
-```
+```text
 Error (Native JavaScript)
  └── CareBridgeError (Base Clinical Error)
       ├── ValidationError (Form inputs, biological boundaries, MRN format)
@@ -237,23 +177,151 @@ npm test
 ```
 *Expected Result:* 18 tests across 4 suites pass with 0 failures.
 
-### Test 2: Verify Form Validation (`ValidationError`)
-1. Launch app with `npm run dev` and open `http://localhost:3000`.
-2. In the Triage Form, enter single character name `A` or age `150`.
-3. Submit the form.
-4. *Expected Result:* The live announcer status banner displays a clear warning. The input field receives focus and retains red focus outline. Loading button is immediately re-enabled.
+### Test 2: Build Production Bundle
+```bash
+npm run build
+```
+*Expected Result:* Vite builds `dist/` with all 46 modules transformed and zero errors.
 
-### Test 3: Verify Storage Recovery (`StorageError`)
-1. Open browser DevTools Console.
-2. Intentionally corrupt stored triage data:
-   ```javascript
-   localStorage.setItem('carebridge_triage_queue_v1', '{corrupt-json');
-   location.reload();
-   ```
-3. *Expected Result:* The application does not crash. It catches `StorageError`, logs a redacted diagnostic, restores default clinical patients, and remains fully interactive.
+### Test 3: Test Theme & Text Scaling Switching
+1. Launch `npm run dev` and navigate to `http://localhost:3000`.
+2. Click **Dark** or **High Contrast** in the top Accessibility Toolbar.
+3. *Expected Result:* The document root receives `data-theme="dark"` or `data-theme="high-contrast"`. All cards, forms, and headers immediately adapt their colors according to CSS custom properties.
+4. Click text size **A+** or **A++**.
+5. *Expected Result:* Font scaling smoothly enlarges across the entire UI.
 
-### Test 4: Verify API Error & Offline Mode (`ApiError`)
-1. Turn off device Wi-Fi or set Network to **Offline** in browser DevTools.
-2. Search for a medication in the drug formulary lookup.
-3. *Expected Result:* The application catches `ApiError` (Status 0 / Network Failure), presents a polite notification via the live announcer, and does not break other triage or voice features.
+---
 
+## 9. React State Management Patterns & Context API
+
+### 9.1 Prop Drilling vs. Context API
+
+CareBridge intentionally balances **Prop Drilling** and **Context API**:
+
+```mermaid
+flowchart TD
+    Provider["CareBridgeProvider (Global Context)\n- theme, fontScale, language\n- live announcements\n- dispatchPatients, dispatchPrescriptions"]
+    Provider --> App["App.jsx\n(Lifts Filter & Search State)"]
+    App --> Header["Header.jsx (Consumes Context)"]
+    Header --> Toolbar["AccessibilityToolbar.jsx (Consumes Context)"]
+    App --> Dashboard["DashboardSummary.jsx (Receives Derived Props)"]
+    App --> Form["PatientTriageForm.jsx (Local Form State + Dispatches)"]
+    App --> Queue["PatientQueue.jsx (Receives Filtered Queue via Props)"]
+    Queue --> Card1["PatientCard #1 (Props Drilling: patient, onCall, onComplete)"]
+    Queue --> Card2["PatientCard #2 (Props Drilling: patient, onCall, onComplete)"]
+    App --> RxList["PrescriptionList.jsx (Props Drilling: prescriptions, callbacks)"]
+    RxList --> RxCard["PrescriptionCard.jsx (Props Drilling: med, onToggle)"]
+```
+
+#### Comparison & Architectural Trade-offs
+| Pattern | When to Use | Advantages | Trade-offs | CareBridge Example |
+| :--- | :--- | :--- | :--- | :--- |
+| **Prop Drilling** | Direct parent-child communication (1–2 levels deep). | High predictability, simple component reusability, explicit contracts. | Cumbersome if passed through 4+ intermediary components. | `PatientQueue` passing patient data and `onCallPatient` to `PatientCard`. |
+| **Context API** | Universal state needed by components across different branches. | Eliminates intermediate prop tunneling; centralized updates. | Inadvertent re-renders if context value is not memoized; couples components. | `CareBridgeContext` providing theme, text scale, language, and speech audio. |
+
+### 9.2 The Five State Management Patterns
+
+1. **Local State (`useState`)**:
+   - Component-specific UI states: e.g., `searchQuery`, `activeFilter`, validation errors in `PatientTriageForm`.
+2. **Lifting State Up**:
+   - `App.jsx` owns the filtered queue criteria so both `DashboardSummary` and `PatientQueue` stay in sync without duplicating data.
+3. **Context-Based State (`useContext`)**:
+   - Persistent preferences (`theme`, `fontScale`, `language`) and live announcement broadcasts reside in `CareBridgeContext`.
+4. **Derived State (`useMemo`)**:
+   - Values computed directly on render from canonical arrays (e.g., `calculatePriorityCounts()`, `calculateAveragePainScore()`, `calculateAdherenceStats()`). Avoids stale or desynchronized state.
+5. **Reducer-Based State (`useReducer`)**:
+   - Pure state transition functions in `src/context/reducers.js`:
+     ```javascript
+     export function patientReducer(state, action) {
+       switch (action.type) {
+         case PATIENT_ACTIONS.ADD_PATIENT:
+           return [action.payload, ...state];
+         case PATIENT_ACTIONS.COMPLETE_PATIENT:
+           return state.filter(p => p.id !== action.payload.patientId);
+         case PATIENT_ACTIONS.CLEAR_QUEUE:
+           return [];
+         default:
+           return state;
+       }
+     }
+     ```
+
+---
+
+## 10. Styling Architecture: CSS Modules, Tailwind CSS & Styled-components
+
+### 10.1 Comparative Technical Matrix
+
+| Dimension | CSS Modules (CareBridge Production) | Tailwind CSS (Isolated Showcase) | styled-components (Isolated Showcase) |
+| :--- | :--- | :--- | :--- |
+| **Authoring Paradigm** | External scoped stylesheet (`Component.module.css`) | Utility class attributes in JSX (`className="p-4 flex ..."`) | CSS-in-JS tagged template literals (`styled.div\`...\``) |
+| **Scoping Mechanism** | Build-time classname hashing (`_patientCard_1b4ef`) | Fixed utility classes scoped via CSS purging | Dynamic runtime `<style>` injection with unique hashes |
+| **Dynamic Styles** | CSS Variables + HTML data-attributes | Conditional class strings / template literals | Native JS expressions inside template string (`${props => ...}`) |
+| **Theme Support** | Seamless integration with CSS Custom Properties | Custom Tailwind config themes or CSS variables | Native `ThemeProvider` or CSS custom properties |
+| **Responsive Media Queries** | Standard CSS `@media` rules within module file | Utility prefixes (`sm:`, `md:`, `lg:`, `xl:`) | Nested `@media` inside template literal |
+| **Bundle & Runtime Impact** | Zero runtime overhead; single extracted CSS stylesheet | Zero runtime overhead; minimal purged CSS file | ~12kB runtime JS bundle overhead; style calculation cost |
+| **Configuration in Vite** | Native out-of-the-box support with 0 plugins | Requires `@tailwindcss/vite` or PostCSS config | Requires `styled-components` npm package |
+| **Primary Advantage** | Clean separation of concerns, WCAG AAA token reuse | Rapid UI prototyping, zero context switching | True component-level dynamic style logic |
+
+### 10.2 Production Example: CSS Modules
+```css
+/* PatientCard.module.css */
+.patientCard {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 1.25rem;
+  border-left: 5px solid var(--primary-500, #0ea5e9);
+}
+
+.cardUrgent {
+  border-left-color: #dc2626;
+  background-color: #fffafb;
+}
+```
+```jsx
+// PatientCard.jsx
+import styles from './PatientCard.module.css';
+
+export function PatientCard({ patient }) {
+  const priorityClass = patient.priority === 'urgent' ? styles.cardUrgent : styles.cardRoutine;
+  return <article className={`${styles.patientCard} ${priorityClass}`}>...</article>;
+}
+```
+
+### 10.3 Isolated Example: Tailwind CSS
+Located in [`src/examples/TailwindShowcase.jsx`](src/examples/TailwindShowcase.jsx):
+```jsx
+export function TailwindPatientCard({ patient }) {
+  return (
+    <div className="max-w-xl mx-auto my-4 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      <div className="flex items-center justify-between">
+        <h4 className="text-lg font-bold text-slate-900">{patient.name}</h4>
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+          ● {patient.priority}
+        </span>
+      </div>
+    </div>
+  );
+}
+```
+
+### 10.4 Isolated Example: Styled-components
+Located in [`src/examples/StyledComponentsShowcase.jsx`](src/examples/StyledComponentsShowcase.jsx):
+```jsx
+import styled, { css } from 'styled-components';
+
+export const StyledTriageBadge = styled.span`
+  display: inline-flex;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-weight: 700;
+
+  ${(props) =>
+    props.$priority === 'urgent' &&
+    css`
+      background-color: #fee2e2;
+      color: #991b1b;
+    `}
+`;
+```

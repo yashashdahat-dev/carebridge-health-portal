@@ -1,0 +1,163 @@
+/* DashboardSummary.module.css - Scoped styles */
+
+.dashboardSummarySection {
+  margin-bottom: 2rem;
+}
+
+.emergencyAlertBanner {
+  background-color: var(--color-emergency-bg, #fef2f2);
+  border: 1px solid var(--color-emergency-border, #fecaca);
+  border-left: 5px solid var(--color-emergency, #dc2626);
+  color: var(--color-emergency, #dc2626);
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.08);
+}
+
+.alertBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alertIconWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.allCompletedBanner {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-left: 5px solid #10b981;
+  color: #065f46;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.metricCard {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cardHasUrgent {
+  border-color: #fca5a5;
+  background-color: #fffafb;
+}
+
+.metricHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.metricLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metricIcon {
+  font-size: 1.25rem;
+}
+
+.metricBody {
+  margin-bottom: 0.75rem;
+}
+
+.metricValue {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-heading, #0f172a);
+  line-height: 1;
+}
+
+.metricUrgentVal {
+  color: #dc2626;
+}
+
+.metricUnit {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #64748b);
+  margin-left: 0.5rem;
+}
+
+.metricFooter {
+  border-top: 1px solid var(--border-color, #f1f5f9);
+  padding-top: 0.65rem;
+}
+
+.tierPillsRow {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tierPill {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.pillEmergency {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.pillUrgent {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.pillStandard {
+  background-color: #e0f2fe;
+  color: #075985;
+}
+
+.adherenceStatRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.adherenceProgressBar {
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  overflow: hidden;
+  appearance: none;
+}
+
+.adherenceProgressBar::-webkit-progress-bar {
+  background-color: #e2e8f0;
+}
+
+.adherenceProgressBar::-webkit-progress-value {
+  background-color: #0284c7;
+  border-radius: 9999px;
+}

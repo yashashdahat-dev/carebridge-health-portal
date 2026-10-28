@@ -1,15 +1,12 @@
 /**
  * CareBridge — MedicationForm Component
  * File: src/components/MedicationForm.jsx
- * 
- * Demonstrates:
- * - Controlled input handling for medication entry
- * - Multilingual instruction fields
- * - Inline validation and accessible submission
+ * Styled via CSS Modules: MedicationForm.module.css
  */
 
 import React, { useState } from 'react';
 import { format12HourTime } from '../utils/clinicalAnalytics.js';
+import styles from './MedicationForm.module.css';
 
 export function MedicationForm({ onAddPrescription, onAnnounce }) {
   const [medData, setMedData] = useState({
@@ -96,7 +93,6 @@ export function MedicationForm({ onAddPrescription, onAnnounce }) {
       onAddPrescription(newPrescription);
       onAnnounce?.(`Medication ${newPrescription.name} scheduled for ${formattedTime}.`, 'success');
 
-      // Reset
       setMedData({
         name: '',
         dosage: '',
@@ -116,77 +112,71 @@ export function MedicationForm({ onAddPrescription, onAnnounce }) {
   };
 
   return (
-    <section className="add-medication-section" aria-labelledby="add-med-heading">
-      <div className="section-header-row">
-        <div>
-          <h3 id="add-med-heading" className="section-title">Schedule New Patient Medication</h3>
-          <p className="section-subtitle">Add daily prescription timing, cautions, and multilingual directions</p>
-        </div>
-      </div>
+    <section className={styles.addMedSection} aria-labelledby="add-med-heading">
+      <h3 id="add-med-heading" className={styles.sectionTitle}>Schedule New Patient Medication</h3>
+      <p className={styles.sectionSubtitle}>Add daily prescription timing, cautions, and multilingual directions</p>
 
-      <form className="clinical-form medication-form" onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate>
         
-        <div className="form-grid-3">
-          <div className="form-group">
-            <label htmlFor="med-name" className="form-label">
-              Medication Name <span className="required-star">*</span>
+        <div className={styles.formGrid3}>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-name" className={styles.formLabel}>
+              Medication Name <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               id="med-name"
               name="name"
               type="text"
-              className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+              className={`${styles.formControl} ${errors.name ? styles.isInvalid : ''}`}
               placeholder="e.g. Paracetamol"
               value={medData.name}
               onChange={handleChange}
-              aria-invalid={Boolean(errors.name)}
               required
             />
-            {errors.name && <span className="inline-field-error">{errors.name}</span>}
+            {errors.name && <span className={styles.inlineFieldError}>{errors.name}</span>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="med-dosage" className="form-label">
-              Strength &amp; Dosage <span className="required-star">*</span>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-dosage" className={styles.formLabel}>
+              Strength &amp; Dosage <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               id="med-dosage"
               name="dosage"
               type="text"
-              className={`form-control ${errors.dosage ? 'is-invalid' : ''}`}
+              className={`${styles.formControl} ${errors.dosage ? styles.isInvalid : ''}`}
               placeholder="e.g. 500 mg Tablet"
               value={medData.dosage}
               onChange={handleChange}
-              aria-invalid={Boolean(errors.dosage)}
               required
             />
-            {errors.dosage && <span className="inline-field-error">{errors.dosage}</span>}
+            {errors.dosage && <span className={styles.inlineFieldError}>{errors.dosage}</span>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="med-time" className="form-label">
-              Scheduled Time <span className="required-star">*</span>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-time" className={styles.formLabel}>
+              Scheduled Time <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               id="med-time"
               name="time"
               type="time"
-              className={`form-control ${errors.time ? 'is-invalid' : ''}`}
+              className={`${styles.formControl} ${errors.time ? styles.isInvalid : ''}`}
               value={medData.time}
               onChange={handleChange}
               required
             />
-            {errors.time && <span className="inline-field-error">{errors.time}</span>}
+            {errors.time && <span className={styles.inlineFieldError}>{errors.time}</span>}
           </div>
         </div>
 
-        <div className="form-grid-3">
-          <div className="form-group">
-            <label htmlFor="med-slot" className="form-label">Dose Slot</label>
+        <div className={styles.formGrid3}>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-slot" className={styles.formLabel}>Dose Slot</label>
             <select
               id="med-slot"
               name="slot"
-              className="form-control"
+              className={styles.formControl}
               value={medData.slot}
               onChange={handleChange}
             >
@@ -197,77 +187,76 @@ export function MedicationForm({ onAddPrescription, onAnnounce }) {
             </select>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="med-purpose" className="form-label">Therapeutic Category</label>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-purpose" className={styles.formLabel}>Therapeutic Category</label>
             <input
               id="med-purpose"
               name="purpose"
               type="text"
-              className="form-control"
-              placeholder="e.g. Analgesic / Antipyretic"
+              className={styles.formControl}
+              placeholder="e.g. Analgesic"
               value={medData.purpose}
               onChange={handleChange}
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="med-caution" className="form-label">Interaction / Food Caution</label>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-caution" className={styles.formLabel}>Interaction Caution</label>
             <input
               id="med-caution"
               name="caution"
               type="text"
-              className="form-control"
-              placeholder="e.g. Must take after food"
+              className={styles.formControl}
+              placeholder="e.g. Take with water"
               value={medData.caution}
               onChange={handleChange}
             />
           </div>
         </div>
 
-        {/* Multilingual Directions */}
-        <div className="form-grid-3">
-          <div className="form-group">
-            <label htmlFor="med-inst-en" className="form-label">Directions (English)</label>
+        <div className={styles.formGrid3}>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-inst-en" className={styles.formLabel}>Directions (English)</label>
             <input
               id="med-inst-en"
               name="instructionsEn"
               type="text"
-              className="form-control"
-              placeholder="Take 1 tablet after meals with water."
+              className={styles.formControl}
+              placeholder="Take 1 tablet after meals"
               value={medData.instructionsEn}
               onChange={handleChange}
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="med-inst-hi" className="form-label">Directions (हिन्दी)</label>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-inst-hi" className={styles.formLabel}>Directions (हिन्दी)</label>
             <input
               id="med-inst-hi"
               name="instructionsHi"
               type="text"
-              className="form-control"
-              placeholder="भोजन के बाद 1 गोली पानी के साथ लें।"
+              className={styles.formControl}
+              placeholder="भोजन के बाद लें"
               value={medData.instructionsHi}
               onChange={handleChange}
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="med-inst-mr" className="form-label">Directions (मराठी)</label>
+          <div className={styles.formGroup}>
+            <label htmlFor="med-inst-mr" className={styles.formLabel}>Directions (मराठी)</label>
             <input
               id="med-inst-mr"
               name="instructionsMr"
               type="text"
-              className="form-control"
-              placeholder="जेवणानंतर १ गोळी पाण्यासोबत घ्या."
+              className={styles.formControl}
+              placeholder="जेवणानंतर घ्या"
               value={medData.instructionsMr}
               onChange={handleChange}
             />
           </div>
         </div>
 
-        <div className="form-actions-row">
+        <div className={styles.formActionsRow}>
           <button
             type="submit"
-            className="btn btn-primary"
+            className={styles.btnSubmit}
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Adding...' : '+ Schedule Medication'}
@@ -277,4 +266,3 @@ export function MedicationForm({ onAddPrescription, onAnnounce }) {
     </section>
   );
 }
-

@@ -1,0 +1,210 @@
+/* PatientTriageForm.module.css - Scoped styles */
+
+.triageSection {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  font-family: var(--font-heading, inherit);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-heading, #0f172a);
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #64748b);
+  margin: 0.2rem 0 0 0;
+}
+
+.formFieldset {
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 1.125rem;
+  margin-bottom: 1.25rem;
+  background-color: var(--slate-50, #f8fafc);
+}
+
+.fieldsetLegend {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary-700, #0369a1);
+  padding: 0 0.5rem;
+}
+
+.formGrid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.875rem;
+}
+
+.formGrid3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.formLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-heading, #1e293b);
+}
+
+.requiredStar {
+  color: #dc2626;
+}
+
+.formControl {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: var(--text-body, #0f172a);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.formControl:focus {
+  border-color: var(--primary-600, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.isInvalid {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2;
+}
+
+.inlineFieldError {
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.painScaleContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.painLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.painScoreOutput {
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-radius: 9999px;
+}
+
+.painSlider {
+  width: 100%;
+  accent-color: #dc2626;
+}
+
+.painScaleTicks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748b);
+  padding: 0 2px;
+}
+
+.liveTierPreview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.65rem;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-body, #1e293b);
+  cursor: pointer;
+}
+
+.criticalSymptomLabel {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.criticalTag {
+  font-size: 0.6875rem;
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.formActionsRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btnPrimary {
+  background-color: var(--primary-600, #0284c7);
+  color: #ffffff;
+  padding: 0.625rem 1.25rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btnPrimary:hover {
+  background-color: var(--primary-700, #0369a1);
+}
+
+.btnSecondary {
+  background-color: transparent;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnSecondary:hover {
+  background-color: #f1f5f9;
+}

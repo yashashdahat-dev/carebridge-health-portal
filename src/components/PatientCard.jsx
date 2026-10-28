@@ -1,10 +1,11 @@
 /**
  * CareBridge — PatientCard Component
  * File: src/components/PatientCard.jsx
+ * Styled via CSS Modules: PatientCard.module.css
  */
 
 import React from 'react';
-import { PRIORITY_TIERS } from '../data/initialData.js';
+import styles from './PatientCard.module.css';
 
 export function PatientCard({ patient, onCallPatient, onCompletePatient }) {
   const {
@@ -12,7 +13,6 @@ export function PatientCard({ patient, onCallPatient, onCompletePatient }) {
     name,
     mrn,
     age,
-    tel,
     stream,
     painLevel,
     symptoms = [],
@@ -22,49 +22,59 @@ export function PatientCard({ patient, onCallPatient, onCompletePatient }) {
     notes
   } = patient;
 
-  const tier = PRIORITY_TIERS[priority] || PRIORITY_TIERS.routine;
+  const priorityClass = priority === 'urgent'
+    ? styles.cardUrgent
+    : priority === 'priority'
+      ? styles.cardPriority
+      : styles.cardRoutine;
+
+  const pillClass = priority === 'urgent'
+    ? styles.pillEmergency
+    : priority === 'priority'
+      ? styles.pillUrgent
+      : styles.pillStandard;
 
   return (
     <article
-      className={`patient-queue-card card-${priority} ${tier.cardBorder || ''}`}
+      className={`${styles.patientCard} ${priorityClass}`}
       aria-labelledby={`patient-name-${id}`}
       tabIndex="0"
     >
-      <div className="card-top-row">
-        <div className="patient-primary-meta">
-          <h3 id={`patient-name-${id}`} className="patient-card-name">{name}</h3>
-          <span className="patient-card-mrn">{mrn}</span>
-          <span className="patient-card-age">Age: {age}</span>
+      <div className={styles.cardTopRow}>
+        <div>
+          <h3 id={`patient-name-${id}`} className={styles.patientName}>{name}</h3>
+          <span className={styles.patientMrn}>{mrn}</span>
+          <span className={styles.patientAge}>Age: {age}</span>
         </div>
-        <div className="patient-priority-badge-wrap">
-          <span className={`status-pill ${tier.badgeClass || 'pill-standard'}`}>
-            <span className={`dot ${tier.dotClass || 'green'}`} aria-hidden="true"></span>
-            {tier.label || priority.toUpperCase()}
+        <div>
+          <span className={`${styles.statusPill} ${pillClass}`}>
+            ● {priority.toUpperCase()}
           </span>
         </div>
       </div>
 
-      <div className="card-clinical-row">
-        <div className="clinical-tag stream-tag">
+      <div className={styles.cardClinicalRow}>
+        <div className={styles.clinicalTag}>
           <strong>Stream:</strong> {stream}
         </div>
-        <div className="clinical-tag pain-tag">
-          <strong>Pain Score:</strong> <span className="pain-badge">{painLevel}/10</span>
+        <div className={styles.clinicalTag}>
+          <strong>Pain Score:</strong> <span className={styles.painBadge}>{painLevel}/10</span>
         </div>
         {arrivalTime && (
-          <div className="clinical-tag time-tag">
+          <div className={styles.clinicalTag}>
             <time dateTime={arrivalTime}>Admitted: {arrivalTime}</time>
           </div>
         )}
       </div>
 
-      {/* Symptoms list */}
       {symptoms.length > 0 && (
-        <div className="patient-symptoms-section">
-          <span className="label-heading">Presenting Symptoms:</span>
-          <div className="symptoms-chips-container">
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '0.25rem' }}>
+            Presenting Symptoms:
+          </div>
+          <div className={styles.symptomsContainer}>
             {symptoms.map((symptom, idx) => (
-              <span key={`${id}-symptom-${idx}`} className="symptom-chip">
+              <span key={`${id}-symptom-${idx}`} className={styles.symptomChip}>
                 {symptom}
               </span>
             ))}
@@ -72,13 +82,14 @@ export function PatientCard({ patient, onCallPatient, onCompletePatient }) {
         </div>
       )}
 
-      {/* Accommodations */}
       {accommodations.length > 0 && (
-        <div className="patient-accommodations-section">
-          <span className="label-heading">Assistive Accommodations:</span>
-          <div className="accommodations-chips-container">
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '0.25rem' }}>
+            Accommodations:
+          </div>
+          <div className={styles.accommodationsContainer}>
             {accommodations.map((acc, idx) => (
-              <span key={`${id}-acc-${idx}`} className="accommodation-chip">
+              <span key={`${id}-acc-${idx}`} className={styles.accommodationChip}>
                 ♿ {acc}
               </span>
             ))}
@@ -86,33 +97,30 @@ export function PatientCard({ patient, onCallPatient, onCompletePatient }) {
         </div>
       )}
 
-      {/* Clinical Notes */}
       {notes && (
-        <p className="patient-clinical-notes">
+        <p className={styles.patientNotes}>
           <strong>Triage Notes:</strong> {notes}
         </p>
       )}
 
-      {/* Actions */}
-      <div className="patient-card-actions">
+      <div className={styles.cardActions}>
         <button
           type="button"
-          className="btn btn-sm btn-outline-primary"
+          className={`${styles.btnAction} ${styles.btnCall}`}
           onClick={() => onCallPatient(patient)}
           aria-label={`Call patient ${name} to consultation room`}
         >
-          <span aria-hidden="true">📢</span> Call Patient
+          📢 Call Patient
         </button>
         <button
           type="button"
-          className="btn btn-sm btn-outline-success"
+          className={`${styles.btnAction} ${styles.btnComplete}`}
           onClick={() => onCompletePatient(id)}
           aria-label={`Mark consultation complete for ${name}`}
         >
-          <span aria-hidden="true">✓</span> Complete / Discharge
+          ✓ Complete / Discharge
         </button>
       </div>
     </article>
   );
 }
-

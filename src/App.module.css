@@ -1,0 +1,59 @@
+/* App.module.css - Scoped styles for Main App Layout */
+
+.carebridgeAppRoot {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--page-bg, #f8fafc);
+  color: var(--text-body, #1e293b);
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+
+.skipLink {
+  position: absolute;
+  top: -999px;
+  left: 1rem;
+  background-color: #0284c7;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  border-radius: 4px;
+  z-index: 9999;
+  text-decoration: none;
+}
+
+.skipLink:focus {
+  top: 1rem;
+  outline: 3px solid #f59e0b;
+}
+
+.appMainContent {
+  flex-grow: 1;
+  padding: 1.5rem 1rem;
+}
+
+.mainContentContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.portalTwoColumnLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 992px) {
+  .portalTwoColumnLayout {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.columnTriageForm {
+  min-width: 0;
+}
+
+.columnPatientQueue {
+  min-width: 0;
+}

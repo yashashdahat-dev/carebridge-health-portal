@@ -1,18 +1,13 @@
 /**
  * CareBridge — PatientTriageForm Component
  * File: src/components/PatientTriageForm.jsx
- * 
- * Demonstrates:
- * - Controlled inputs with React state
- * - Event handling: onChange, onSubmit, onClick
- * - useRef to focus the first invalid field on validation failure
- * - Automatic urgent priority assignment for critical symptoms
- * - Form reset, sample pre-fill, and accessible inline validation
+ * Styled via CSS Modules: PatientTriageForm.module.css
  */
 
 import React, { useState, useRef } from 'react';
 import { CRITICAL_SYMPTOMS, SAMPLE_PATIENTS } from '../data/initialData.js';
 import { assessTriagePriority } from '../utils/clinicalAnalytics.js';
+import styles from './PatientTriageForm.module.css';
 
 const AVAILABLE_SYMPTOMS = [
   'Chest Tightness / Dyspnea',
@@ -34,7 +29,6 @@ const AVAILABLE_ACCOMMODATIONS = [
 ];
 
 export function PatientTriageForm({ onAddPatient, onAnnounce }) {
-  // Form Field Controlled States
   const [formData, setFormData] = useState({
     name: '',
     mrn: '',
@@ -48,7 +42,6 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     notes: ''
   });
 
-  // Validation Error States
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sampleIndex, setSampleIndex] = useState(0);
@@ -58,22 +51,15 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
   const mrnRef = useRef(null);
   const ageRef = useRef(null);
   const streamRef = useRef(null);
-  const painRef = useRef(null);
 
-  // Handle standard input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear field-specific error on change
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
-  // Handle symptom checkbox toggle
   const handleSymptomToggle = (symptom) => {
     setFormData((prev) => {
       const exists = prev.symptoms.includes(symptom);
@@ -81,17 +67,15 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
         ? prev.symptoms.filter((s) => s !== symptom)
         : [...prev.symptoms, symptom];
 
-      // Instant urgency feedback
       const priority = assessTriagePriority(prev.painLevel, updated);
       if (priority === 'urgent') {
-        onAnnounce?.('Alert: Critical symptom selected. Triage will be classified as Urgent (Tier 1).', 'warning');
+        onAnnounce?.('Alert: Critical symptom selected. Patient triage prioritized as Urgent (Tier 1).', 'warning');
       }
 
       return { ...prev, symptoms: updated };
     });
   };
 
-  // Handle accommodation checkbox toggle
   const handleAccommodationToggle = (acc) => {
     setFormData((prev) => {
       const exists = prev.accommodations.includes(acc);
@@ -102,12 +86,11 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     });
   };
 
-  // Form Validation with accessible useRef focus
   const validate = () => {
     const newErrors = {};
 
     if (!formData.name.trim() || formData.name.trim().length < 2) {
-      newErrors.name = 'Patient legal or preferred name must be at least 2 characters.';
+      newErrors.name = 'Patient name must be at least 2 characters.';
     }
 
     if (!formData.mrn.trim() || !/^MRN-\d{4,8}$/i.test(formData.mrn.trim())) {
@@ -116,7 +99,7 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
 
     const ageNum = parseInt(formData.age, 10);
     if (isNaN(ageNum) || ageNum < 0 || ageNum > 125) {
-      newErrors.age = 'Patient age must be a valid number between 0 and 125.';
+      newErrors.age = 'Patient age must be between 0 and 125.';
     }
 
     if (!formData.stream) {
@@ -125,7 +108,7 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
 
     setErrors(newErrors);
 
-    // useRef: Focus the very first invalid input
+    // Focus first invalid input using useRef
     if (newErrors.name && nameRef.current) {
       nameRef.current.focus();
     } else if (newErrors.mrn && mrnRef.current) {
@@ -139,19 +122,17 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Form Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!validate()) {
-      onAnnounce?.('Validation Error: Please correct the highlighted triage form fields.', 'error');
+      onAnnounce?.('Validation Error: Please review highlighted triage form fields.', 'error');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Calculate clinical priority tier automatically
       const calculatedPriority = assessTriagePriority(formData.painLevel, formData.symptoms);
 
       const newPatient = {
@@ -166,7 +147,7 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
         accommodations: formData.accommodations,
         priority: calculatedPriority,
         arrivalTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        notes: formData.notes.trim() || 'No additional clinical remarks recorded.'
+        notes: formData.notes.trim() || 'No additional remarks recorded.'
       };
 
       onAddPatient(newPatient);
@@ -195,7 +176,6 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     }
   };
 
-  // Pre-fill sample patient
   const handlePrefill = () => {
     const sample = SAMPLE_PATIENTS[sampleIndex % SAMPLE_PATIENTS.length];
     setFormData({
@@ -215,88 +195,75 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     onAnnounce?.(`Autofilled sample data for ${sample.name}.`, 'info');
   };
 
-  // Computed preview tier
   const previewPriority = assessTriagePriority(formData.painLevel, formData.symptoms);
 
   return (
-    <section id="triage-section" className="triage-form-section" aria-labelledby="triage-heading">
-      <div className="section-header-row">
+    <section id="triage-section" className={styles.triageSection} aria-labelledby="triage-heading">
+      <div className={styles.sectionHeaderRow}>
         <div>
-          <h2 id="triage-heading" className="section-title">Emergency Patient Triage Intake</h2>
-          <p className="section-subtitle">Clinical assessment, pain scoring, and assistive accommodation registration</p>
+          <h2 id="triage-heading" className={styles.sectionTitle}>Emergency Patient Triage Intake</h2>
+          <p className={styles.sectionSubtitle}>Clinical assessment, pain scoring, and accommodation registration</p>
         </div>
-        <div className="form-quick-tools">
+        <div>
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary"
+            className={styles.btnSecondary}
             onClick={handlePrefill}
-            aria-label="Prefill sample patient record for clinical testing"
+            aria-label="Prefill sample patient record"
           >
             ⚡ Sample Autofill
           </button>
         </div>
       </div>
 
-      <form className="clinical-form triage-form" onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate>
         
         {/* Fieldset 1: Demographics */}
-        <fieldset className="form-fieldset">
-          <legend className="fieldset-legend">1. Patient Demographics &amp; Registration</legend>
+        <fieldset className={styles.formFieldset}>
+          <legend className={styles.fieldsetLegend}>1. Patient Demographics &amp; Registration</legend>
           
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label htmlFor="triage-patient-name" className="form-label">
-                Legal / Preferred Patient Name <span className="required-star">*</span>
+          <div className={styles.formGrid2}>
+            <div className={styles.formGroup}>
+              <label htmlFor="triage-patient-name" className={styles.formLabel}>
+                Legal / Preferred Patient Name <span className={styles.requiredStar}>*</span>
               </label>
               <input
                 ref={nameRef}
                 id="triage-patient-name"
                 name="name"
                 type="text"
-                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                className={`${styles.formControl} ${errors.name ? styles.isInvalid : ''}`}
                 placeholder="e.g. Ramesh Kulkarni"
                 value={formData.name}
                 onChange={handleChange}
-                aria-invalid={Boolean(errors.name)}
-                aria-describedby={errors.name ? 'name-error' : undefined}
                 required
               />
-              {errors.name && (
-                <span id="name-error" className="inline-field-error" role="alert">
-                  {errors.name}
-                </span>
-              )}
+              {errors.name && <span className={styles.inlineFieldError}>{errors.name}</span>}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="triage-patient-mrn" className="form-label">
-                Medical Record Number (MRN) <span className="required-star">*</span>
+            <div className={styles.formGroup}>
+              <label htmlFor="triage-patient-mrn" className={styles.formLabel}>
+                Medical Record Number (MRN) <span className={styles.requiredStar}>*</span>
               </label>
               <input
                 ref={mrnRef}
                 id="triage-patient-mrn"
                 name="mrn"
                 type="text"
-                className={`form-control ${errors.mrn ? 'is-invalid' : ''}`}
+                className={`${styles.formControl} ${errors.mrn ? styles.isInvalid : ''}`}
                 placeholder="MRN-1082"
                 value={formData.mrn}
                 onChange={handleChange}
-                aria-invalid={Boolean(errors.mrn)}
-                aria-describedby={errors.mrn ? 'mrn-error' : undefined}
                 required
               />
-              {errors.mrn && (
-                <span id="mrn-error" className="inline-field-error" role="alert">
-                  {errors.mrn}
-                </span>
-              )}
+              {errors.mrn && <span className={styles.inlineFieldError}>{errors.mrn}</span>}
             </div>
           </div>
 
-          <div className="form-grid-3">
-            <div className="form-group">
-              <label htmlFor="triage-patient-age" className="form-label">
-                Age (Years) <span className="required-star">*</span>
+          <div className={styles.formGrid3}>
+            <div className={styles.formGroup}>
+              <label htmlFor="triage-patient-age" className={styles.formLabel}>
+                Age (Years) <span className={styles.requiredStar}>*</span>
               </label>
               <input
                 ref={ageRef}
@@ -305,45 +272,39 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
                 type="number"
                 min="0"
                 max="125"
-                className={`form-control ${errors.age ? 'is-invalid' : ''}`}
-                placeholder="e.g. 48"
+                className={`${styles.formControl} ${errors.age ? styles.isInvalid : ''}`}
+                placeholder="48"
                 value={formData.age}
                 onChange={handleChange}
-                aria-invalid={Boolean(errors.age)}
-                aria-describedby={errors.age ? 'age-error' : undefined}
                 required
               />
-              {errors.age && (
-                <span id="age-error" className="inline-field-error" role="alert">
-                  {errors.age}
-                </span>
-              )}
+              {errors.age && <span className={styles.inlineFieldError}>{errors.age}</span>}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="triage-patient-tel" className="form-label">
+            <div className={styles.formGroup}>
+              <label htmlFor="triage-patient-tel" className={styles.formLabel}>
                 Emergency Contact Phone
               </label>
               <input
                 id="triage-patient-tel"
                 name="tel"
                 type="tel"
-                className="form-control"
+                className={styles.formControl}
                 placeholder="+91 98200 12345"
                 value={formData.tel}
                 onChange={handleChange}
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="triage-clinical-stream" className="form-label">
-                Clinical Specialty Stream <span className="required-star">*</span>
+            <div className={styles.formGroup}>
+              <label htmlFor="triage-clinical-stream" className={styles.formLabel}>
+                Clinical Stream <span className={styles.requiredStar}>*</span>
               </label>
               <select
                 ref={streamRef}
                 id="triage-clinical-stream"
                 name="stream"
-                className={`form-control ${errors.stream ? 'is-invalid' : ''}`}
+                className={`${styles.formControl} ${errors.stream ? styles.isInvalid : ''}`}
                 value={formData.stream}
                 onChange={handleChange}
                 required
@@ -360,69 +321,58 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
           </div>
         </fieldset>
 
-        {/* Fieldset 2: Pain Scale & Urgency Rating */}
-        <fieldset className="form-fieldset">
-          <legend className="fieldset-legend">2. Clinical Pain &amp; Vitals Assessment</legend>
-          
-          <div className="pain-scale-container">
-            <div className="pain-label-row">
-              <label htmlFor="pain-scale-slider" className="form-label">
-                Patient Pain Score (1: Mild / Discomfort to 10: Incapacitating)
+        {/* Fieldset 2: Pain Scale */}
+        <fieldset className={styles.formFieldset}>
+          <legend className={styles.fieldsetLegend}>2. Pain &amp; Urgency Assessment</legend>
+          <div className={styles.painScaleContainer}>
+            <div className={styles.painLabelRow}>
+              <label htmlFor="pain-scale-slider" className={styles.formLabel}>
+                Patient Pain Score (1: Mild to 10: Incapacitating)
               </label>
-              <output htmlFor="pain-scale-slider" className="pain-score-output">
+              <output htmlFor="pain-scale-slider" className={styles.painScoreOutput}>
                 Level {formData.painLevel} / 10
               </output>
             </div>
-
             <input
-              ref={painRef}
               id="pain-scale-slider"
               name="painLevel"
               type="range"
               min="1"
               max="10"
-              className="pain-slider"
+              className={styles.painSlider}
               value={formData.painLevel}
               onChange={handleChange}
-              aria-valuemin="1"
-              aria-valuemax="10"
-              aria-valuenow={formData.painLevel}
             />
-
-            <div className="pain-scale-ticks" aria-hidden="true">
+            <div className={styles.painScaleTicks}>
               <span>1 (Mild)</span>
-              <span>3</span>
               <span>5 (Moderate)</span>
-              <span>7</span>
               <span>10 (Severe)</span>
             </div>
-
-            {/* Live Triage Tier Preview Badge */}
-            <div className="live-tier-preview">
-              <span>Automated Priority Assessment:</span>
-              <span className={`status-pill ${previewPriority === 'urgent' ? 'pill-emergency' : previewPriority === 'priority' ? 'pill-urgent' : 'pill-standard'}`}>
-                {previewPriority.toUpperCase()} (Tier {previewPriority === 'urgent' ? 1 : previewPriority === 'priority' ? 2 : 3})
-              </span>
+            <div className={styles.liveTierPreview}>
+              <span>Priority Rating:</span>
+              <strong style={{ color: previewPriority === 'urgent' ? '#dc2626' : previewPriority === 'priority' ? '#d97706' : '#059669' }}>
+                {previewPriority.toUpperCase()}
+              </strong>
             </div>
           </div>
         </fieldset>
 
-        {/* Fieldset 3: Symptoms Checklist */}
-        <fieldset className="form-fieldset">
-          <legend className="fieldset-legend">3. Presenting Clinical Symptoms</legend>
-          <div className="checkbox-grid">
+        {/* Fieldset 3: Symptoms */}
+        <fieldset className={styles.formFieldset}>
+          <legend className={styles.fieldsetLegend}>3. Presenting Clinical Symptoms</legend>
+          <div className={styles.checkboxGrid}>
             {AVAILABLE_SYMPTOMS.map((symptom) => {
               const isChecked = formData.symptoms.includes(symptom);
               const isCritical = CRITICAL_SYMPTOMS.includes(symptom);
               return (
-                <label key={symptom} className={`checkbox-label ${isCritical ? 'critical-symptom-label' : ''}`}>
+                <label key={symptom} className={`${styles.checkboxLabel} ${isCritical ? styles.criticalSymptomLabel : ''}`}>
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => handleSymptomToggle(symptom)}
                   />
                   <span>
-                    {symptom} {isCritical && <strong className="critical-tag">(Tier 1 Red Flag)</strong>}
+                    {symptom} {isCritical && <span className={styles.criticalTag}>Tier 1 Red Flag</span>}
                   </span>
                 </label>
               );
@@ -431,11 +381,11 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
         </fieldset>
 
         {/* Fieldset 4: Accommodations */}
-        <fieldset className="form-fieldset">
-          <legend className="fieldset-legend">4. Patient Accommodations &amp; Accessibility</legend>
-          <div className="checkbox-grid">
+        <fieldset className={styles.formFieldset}>
+          <legend className={styles.fieldsetLegend}>4. Assistive Accommodations</legend>
+          <div className={styles.checkboxGrid}>
             {AVAILABLE_ACCOMMODATIONS.map((acc) => (
-              <label key={acc} className="checkbox-label">
+              <label key={acc} className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
                   checked={formData.accommodations.includes(acc)}
@@ -447,37 +397,31 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
           </div>
         </fieldset>
 
-        {/* Fieldset 5: Clinical Notes */}
-        <fieldset className="form-fieldset">
-          <legend className="fieldset-legend">5. Clinical Notes &amp; Observations</legend>
-          <div className="form-group">
-            <label htmlFor="triage-notes" className="form-label">
-              On-Duty Nurse / Physician Observations
-            </label>
-            <textarea
-              id="triage-notes"
-              name="notes"
-              className="form-control"
-              rows="3"
-              placeholder="e.g. Diaphoretic, patient reports sudden onset while walking. Monitored vitals."
-              value={formData.notes}
-              onChange={handleChange}
-            ></textarea>
-          </div>
+        {/* Fieldset 5: Notes */}
+        <fieldset className={styles.formFieldset}>
+          <legend className={styles.fieldsetLegend}>5. Clinical Observations</legend>
+          <textarea
+            id="triage-notes"
+            name="notes"
+            className={styles.formControl}
+            rows="3"
+            placeholder="Clinical observations..."
+            value={formData.notes}
+            onChange={handleChange}
+          ></textarea>
         </fieldset>
 
-        {/* Submit Actions */}
-        <div className="form-actions-row">
+        <div className={styles.formActionsRow}>
           <button
             type="submit"
-            className="btn btn-primary btn-submit-triage"
+            className={styles.btnPrimary}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Registering Patient...' : '✓ Admit Patient to Queue'}
+            {isSubmitting ? 'Registering...' : '✓ Admit Patient to Queue'}
           </button>
           <button
             type="button"
-            className="btn btn-outline-secondary"
+            className={styles.btnSecondary}
             onClick={() => {
               setFormData({
                 name: '',
@@ -502,4 +446,3 @@ export function PatientTriageForm({ onAddPatient, onAnnounce }) {
     </section>
   );
 }
-
